@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">NewsAI</string>
+    <string name="close">Đóng</string>
+    <string name="login">Đăng nhập</string>
+    <string name="email">Địa chỉ email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="btnLogin">Đăng nhập</string>
+    <string name="signup">Đăng ký</string>
+    <string name="confirm_password">Nhập lại mật khẩu</string>
+    <string name="name">Đinh Mạnh Hùng</string>
+</resources>
