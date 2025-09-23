@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/home_bg">
+
+        <!-- Ảnh đầu bài: full ngang, crop cho đẹp -->
+        <ImageView
+            android:id="@+id/imageHeader"
+            android:layout_width="0dp"
+            android:layout_height="284dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/new1detail"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Nút đóng ở góc phải trên của ảnh -->
+        <ImageButton
+            android:id="@+id/cancelButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/cancelimg"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintTop_toTopOf="@id/imageHeader"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Chú thích ảnh -->
+        <TextView
+            android:id="@+id/captionText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ibmplexsans_regular"
+            android:text="Xe tăng Israel ở khu vực gần biên giới với Lebanon ngày 15/10. Ảnh: AFP"
+            android:textSize="16sp"
+            android:textColor="@color/text_gray"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/imageHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Tiêu đề bài -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ibmplexserif_medium"
+            android:text="Cuộc xung đột giữa Israel và phong trào Hamas: Hơn 1.100 người thiệt mạng trong cuộc chiến đẫm máu"
+            android:textSize="24sp"
+            android:textColor="@color/title_black"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintTop_toBottomOf="@id/captionText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Tóm tắt -->
+        <TextView
+            android:id="@+id/summaryText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ibmplexserif_medium"
+            android:text="Israel bị cho là đã tập kích vào lãnh thổ Syria và Li Băng để đáp trả các cuộc pháo kích của những lực lượng vũ trang đứng về phía Hamas."
+            android:textSize="18sp"
+            android:textColor="@color/title_black"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintTop_toBottomOf="@id/titleText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Thời gian -->
+        <TextView
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ibmplexsans_regular"
+            android:text="Thứ hai, 15/09/2025 - 15:10"
+            android:textSize="14sp"
+            android:textColor="@color/text_gray"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/summaryText"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <!-- 3 nút hành động: nghe / share / bookmark -->
+        <ImageButton
+            android:id="@+id/listen"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/listen"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/summaryText"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="16dp"/>
+
+        <ImageButton
+            android:id="@+id/share"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/share"
+            app:layout_constraintTop_toTopOf="@id/listen"
+            app:layout_constraintEnd_toStartOf="@id/listen"
+            android:layout_marginEnd="8dp"/>
+
+        <ImageButton
+            android:id="@+id/bookmark"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/mark"
+            app:layout_constraintTop_toTopOf="@id/listen"
+            app:layout_constraintEnd_toStartOf="@id/share"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- Nội dung bài -->
+        <TextView
+            android:id="@+id/contentText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/ibmplexsans_regular"
+            android:text="Hãng tin SANA ngày 12/10 dẫn nguồn tin quân sự Syria cho biết, Israel đã phóng tên lửa nhằm vào sân bay ở thủ đô Damascus và thành phố Aleppo ở miền Bắc Syria. Vụ tập kích khiến đường băng bị hư hại, buộc 2 sân bay này phải tạm ngừng hoạt động.\n\nIsrael hiện chưa bình luận về cáo buộc trên.\n\nHeading 2\nNhững năm qua, Israel bị cáo buộc đứng sau các cuộc không kích nhằm vào những mục tiêu được cho là có liên quan đến Iran ở Syria, trong đó có sân bay Damascus và Aleppo.\n\nTheo các nguồn thạo tin, những cuộc tập kích này nhằm làm gián đoạn chuỗi cung cấp vũ khí của Iran cho Syria, nơi Tehran được cho là có tầm ảnh hưởng ngày càng lớn.\n\nHeading 2\nVụ tập kích hôm 12/10 diễn ra chỉ một ngày trước khi Ngoại trưởng Iran Hossein Amirabdollahian thăm Syria và trong bối cảnh tình hình Trung Đông \&quot;nóng\&quot; lên do xung đột giữa Israel và lực lượng Hamas những ngày qua.\n\nSáng 7/10, lực lượng Hamas ở Gaza bất ngờ bắn hàng nghìn rocket về phía Israel và bắt giữ khoảng 150 con tin bao gồm cả công dân Israel và công dân nước ngoài.\n\nMột số quan chức phương Tây nghi ngờ Iran có liên quan đến vụ tấn công lớn chưa từng có của Hamas vào Israel hôm 7/10.\n\nTuy nhiên, Tehran đã bác bỏ cáo buộc. \&quot;Những cáo buộc liên quan đến vai trò của Iran đều mang động cơ chính trị\&quot;, người phát ngôn Bộ Ngoại giao Nasser Kanani nói với các phóng viên ngày 9/10. Ông Kanani khẳng định Iran không can thiệp \&quot;vào quá trình ra quyết định của các quốc gia khác, bao gồm cả Palestine\&quot;."
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:lineSpacingExtra="4dp"
+            app:layout_constraintTop_toBottomOf="@id/listen"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
