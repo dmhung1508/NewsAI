@@ -5,15 +5,258 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="@color/home_bg"
+    tools:context=".MainActivity"
+    tools:ignore="ExtraText">
+
+    <ImageButton
+        android:id="@+id/ivMenu"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/frame_110"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="55dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/ivIConHomePage"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/lucide_smile"
+        android:layout_marginTop="55dp"
+        android:layout_marginEnd="18dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints" />
 
     <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:fontFamily="@font/ibmplexsans_semibold"
+        android:text="Mới và Hot"
+        android:textColor="@color/title_black"
+        android:textSize="24sp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="25dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/ivMenu" />
+
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/ibmplexsans_semibold"
+        android:text="Thứ Tư, 11.10"
+        android:textColor="@color/title_gray"
+        android:textSize="24sp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/tvDate"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNews1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="18dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white">
+
+                    <ImageView
+                        android:id="@+id/imgNews1"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/news1" />
+
+                    <TextView
+                        android:id="@+id/tvNewsTitle1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cuộc xung đột giữa Israel và phong trào Hamas: Hơn 1.100 người thiệt mạng trong cuộc chiến đẫm máu"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/ibmplexserif_medium"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="40dp"
+                        android:paddingBottom="0dp"
+                        android:textColor="@android:color/black" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="40dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/lucide_newspaper" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="5 tin liên quan"
+                            android:textSize="14sp"
+                            android:textColor="@color/title_gray" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNews2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="18dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white">
+
+                    <ImageView
+                        android:id="@+id/imgNews2"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/news2" />
+
+                    <TextView
+                        android:id="@+id/tvNewsTitle2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Động đất kinh hoàng tại Afghanistan: Hơn 2.400 người thiệt mạng, chính quyền Taliban kêu gọi cứu trợ"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/ibmplexserif_medium"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="40dp"
+                        android:paddingBottom="0dp"
+                        android:textColor="@android:color/black" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="40dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/lucide_newspaper" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="5 tin liên quan"
+                            android:textSize="14sp"
+                            android:textColor="@color/title_gray" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNews3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="18dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white">
+
+                    <ImageView
+                        android:id="@+id/imgNews3"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/news3" />
+
+                    <TextView
+                        android:id="@+id/tvNewsTitle3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Giá vàng hôm nay: USD giảm, vàng tăng trở lại"
+                        android:textSize="20sp"
+                        android:fontFamily="@font/ibmplexserif_medium"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="40dp"
+                        android:paddingBottom="0dp"
+                        android:textColor="@android:color/black" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="40dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="40dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/lucide_newspaper" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="5 tin liên quan"
+                            android:textSize="14sp"
+                            android:textColor="@color/title_gray" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
