@@ -40,6 +40,12 @@ public class MainActivity extends AppCompatActivity {
             finish();
         });
 
+        // Nút mở Chatbot
+        findViewById(R.id.fabChatbot).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ChatbotActivity.class);
+            startActivity(intent);
+        });
+
         }
 
 

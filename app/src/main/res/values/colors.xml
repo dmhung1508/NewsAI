@@ -2,9 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="gray">#FF6B7280</color>"
-    <color name = "home_bg">#F6F4EE</color>
-    <color name = "title_black">#1D1D1F</color>
-    <color name = "title_gray">#86868B</color>
-    <color name = "text_gray">#5A5A5A</color>
+    <color name="gray">#FF6B7280</color>
+    <color name="home_bg">#F6F4EE</color>
+    <color name="title_black">#1D1D1F</color>
+    <color name="title_gray">#86868B</color>
+    <color name="text_gray">#5A5A5A</color>
+    <color name="blue_primary">#4F6EF7</color>
 </resources>

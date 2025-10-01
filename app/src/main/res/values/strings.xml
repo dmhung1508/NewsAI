@@ -8,4 +8,9 @@
     <string name="signup">Đăng ký</string>
     <string name="confirm_password">Nhập lại mật khẩu</string>
     <string name="name">Đinh Mạnh Hùng</string>
+    <string name="default_web_client_id">220903784873-e97pe3tvjpab7cd8r3acg3fipe7e1412.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">1279475455862956</string>
+    <string name="fb_login_protocol_scheme">fb1279475455862956</string>
+    <string name="facebook_client_token">226631c3d6e880bee311092fa5377c5f</string>
+
 </resources>

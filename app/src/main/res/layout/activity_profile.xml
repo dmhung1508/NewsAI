@@ -61,7 +61,6 @@
             android:id="@+id/editName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Đinh Mạnh Hùng"
             android:textColor="#111827"/>
     </com.google.android.material.textfield.TextInputLayout>
         <com.google.android.material.textfield.TextInputLayout
@@ -84,7 +83,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
-                android:text="dinhhung15082004@gmail.com"
                 android:textColor="#111827"/>
         </com.google.android.material.textfield.TextInputLayout>
         <com.google.android.material.textfield.TextInputLayout
@@ -107,7 +105,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="phone"
-                android:text="+84 988888888"
                 android:textColor="#111827"/>
         </com.google.android.material.textfield.TextInputLayout>
 <!--    nút update-->
@@ -115,13 +112,25 @@
             android:id="@+id/btnUpdate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_marginTop="22dp"
-            android:text="Cập nhật"
-            app:cornerRadius="28dp"
-            app:strokeColor="#2BB4A6"
-            app:strokeWidth="2dp">
+            android:text="Cập nhật thông tin"
+            android:textColor="@android:color/white"
+            app:backgroundTint="#2BB4A6"
+            app:cornerRadius="28dp">
+        </com.google.android.material.button.MaterialButton>
 
+<!--    nút đăng xuất-->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginTop="12dp"
+            android:text="Đăng xuất"
+            android:textColor="#EF4444"
+            app:cornerRadius="28dp"
+            app:strokeColor="#EF4444"
+            app:strokeWidth="2dp">
         </com.google.android.material.button.MaterialButton>
 
     </LinearLayout>
