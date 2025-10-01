@@ -9,7 +9,6 @@
         android:layout_height="wrap_content"
         android:background="@color/home_bg">
 
-        <!-- Ảnh đầu bài: full ngang, crop cho đẹp -->
         <ImageView
             android:id="@+id/imageHeader"
             android:layout_width="0dp"
@@ -20,7 +19,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- Nút đóng ở góc phải trên của ảnh -->
         <ImageButton
             android:id="@+id/cancelButton"
             android:layout_width="40dp"
@@ -32,7 +30,6 @@
             app:layout_constraintTop_toTopOf="@id/imageHeader"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- Chú thích ảnh -->
         <TextView
             android:id="@+id/captionText"
             android:layout_width="0dp"
@@ -48,7 +45,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- Tiêu đề bài -->
         <TextView
             android:id="@+id/titleText"
             android:layout_width="0dp"
@@ -65,7 +61,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- Tóm tắt -->
         <TextView
             android:id="@+id/summaryText"
             android:layout_width="0dp"
@@ -82,7 +77,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- Thời gian -->
         <TextView
             android:id="@+id/time"
             android:layout_width="wrap_content"
@@ -96,7 +90,6 @@
             app:layout_constraintTop_toBottomOf="@id/summaryText"
             app:layout_constraintStart_toStartOf="parent"/>
 
-        <!-- 3 nút hành động: nghe / share / bookmark -->
         <ImageButton
             android:id="@+id/listen"
             android:layout_width="40dp"
@@ -128,7 +121,6 @@
             app:layout_constraintEnd_toStartOf="@id/share"
             android:layout_marginEnd="8dp"/>
 
-        <!-- Nội dung bài -->
         <TextView
             android:id="@+id/contentText"
             android:layout_width="0dp"
