@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF5F5F5">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/headerChat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:elevation="2dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#666666"
+            android:contentDescription="Quay lại" />
+
+        <ImageView
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_avatar"
+            android:background="@drawable/round_avatar"
+            android:clipToOutline="true" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NewsBot"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="2dp">
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/online_indicator" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đang hoạt động"
+                    android:textColor="#4CAF50"
+                    android:textSize="12sp"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageButton
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_more"
+            app:tint="#666666"
+            android:contentDescription="Menu" />
+    </LinearLayout>
+
+    <!-- Chat RecyclerView -->
+
+    <!-- Input Layout -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewChat"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/inputLayout"
+        android:layout_below="@id/headerChat"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:clipToPadding="false"
+        android:padding="12dp" />
+
+    <LinearLayout
+        android:id="@+id/inputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#FFF0F0F0"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            android:layout_marginEnd="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <EditText
+                    android:id="@+id/edtMessage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Nhập câu hỏi của bạn"
+                    android:textColorHint="#999999"
+                    android:textColor="#000000"
+                    android:background="@null"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4"
+                    android:textSize="15sp" />
+
+                <ImageButton
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    app:tint="#666666"
+                    android:contentDescription="Micro" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <ImageButton
+            android:id="@+id/btnSend"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/button_send_chat"
+            android:src="@android:drawable/ic_menu_send"
+            app:tint="@android:color/white"
+            android:contentDescription="Gửi tin nhắn" />
+    </LinearLayout>
+</RelativeLayout>
