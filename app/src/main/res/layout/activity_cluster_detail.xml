@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="220dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@color/white">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tiêu đề cụm tin"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/title_black"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:lineSpacingExtra="4dp" />
+
+            <TextView
+                android:id="@+id/tvMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="VnExpress • 5 bài viết"
+                android:textSize="14sp"
+                android:textColor="@color/title_gray"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/tvSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tóm tắt cụm tin..."
+                android:textSize="16sp"
+                android:textColor="@color/text_gray"
+                android:fontFamily="@font/ibmplexsans_regular"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
+
+        <!-- Related Articles Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/home_bg"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📰 Các bài viết liên quan"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/title_black"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:id="@+id/articlesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
