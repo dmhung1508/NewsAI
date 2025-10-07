@@ -44,24 +44,24 @@ public class LoginActivity extends AppCompatActivity {
         com.facebook.appevents.AppEventsLogger.activateApp(getApplication());
         mAuth = FirebaseAuth.getInstance();
         
-        // Khởi tạo views
+
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
         
-        // Nút đăng nhập bằng email/password
+
         findViewById(R.id.btnLogin).setOnClickListener(v -> loginWithEmail());
         
-        // Nút chuyển sang đăng ký
+
         TextView signbtn = findViewById(R.id.tvSignup);
         signbtn.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
             startActivity(intent);
         });
         
-        // Nút đóng
+
         findViewById(R.id.close_btn).setOnClickListener(v -> finish());
         
-        // Google Sign-In setup
+
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
@@ -72,7 +72,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
-        // Facebook setup
+
         fbCallbackManager = CallbackManager.Factory.create();
         findViewById(R.id.btnFacebook).setOnClickListener(v -> {
             LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("email", "public_profile"));

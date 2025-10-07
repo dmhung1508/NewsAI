@@ -20,7 +20,7 @@ import okhttp3.Response;
 public class GrokApiService {
     private static final String TAG = "GrokApiService";
     private static final String API_URL = "https://api.x.ai/v1/chat/completions";
-    private static final String API_KEY = "";
+    private static final String API_KEY = "xai-fYN4sBBEqp2UwI4onnY4Nnl9cDudp21QIIyslQFsM1KuaMZelzRIWEo5K6yzZA1oU3evd3h2gSeD54Yx";
     
     private final OkHttpClient client;
     private final ExecutorService executorService;
@@ -43,7 +43,7 @@ public class GrokApiService {
     public void sendMessage(String userMessage, GrokCallback callback) {
         executorService.execute(() -> {
             try {
-                // Tạo JSON request body
+
                 JSONObject requestBody = new JSONObject();
                 requestBody.put("model", "grok-4-fast-non-reasoning");
                 requestBody.put("temperature", 0.7);
@@ -51,21 +51,20 @@ public class GrokApiService {
                 
                 JSONArray messages = new JSONArray();
                 
-                // System message
+
                 JSONObject systemMsg = new JSONObject();
                 systemMsg.put("role", "system");
                 systemMsg.put("content", "Bạn là NewsBot, một trợ lý AI chuyên về tin tức và sự kiện thời sự. Hãy trả lời bằng tiếng Việt một cách thân thiện và chính xác.");
                 messages.put(systemMsg);
                 
-                // User message
+
                 JSONObject userMsg = new JSONObject();
                 userMsg.put("role", "user");
                 userMsg.put("content", userMessage);
                 messages.put(userMsg);
                 
                 requestBody.put("messages", messages);
-                
-                // Tạo request
+
                 RequestBody body = RequestBody.create(
                     requestBody.toString(),
                     MediaType.parse("application/json; charset=utf-8")
@@ -78,7 +77,7 @@ public class GrokApiService {
                         .post(body)
                         .build();
                 
-                // Gọi API
+
                 Response response = client.newCall(request).execute();
                 
                 if (response.isSuccessful() && response.body() != null) {
