@@ -152,10 +152,29 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
         
+        // Show loading
+        Toast.makeText(this, "Đang đăng nhập...", Toast.LENGTH_SHORT).show();
+        
         // Đăng nhập Firebase
         mAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this, task -> {
                 if (task.isSuccessful()) {
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    
+                    // Check if email is verified
+                    if (user != null && !user.isEmailVerified()) {
+                        Toast.makeText(this, 
+                            "Email chưa được xác thực!\nVui lòng kiểm tra email và xác thực tài khoản.", 
+                            Toast.LENGTH_LONG).show();
+                        
+                        // Optionally: Resend verification email
+                        showResendVerificationOption(user);
+                        
+                        // Sign out user
+                        mAuth.signOut();
+                        return;
+                    }
+                    
                     Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
                     goToMain();
                 } else {
@@ -165,14 +184,34 @@ public class LoginActivity extends AppCompatActivity {
                         if (exception != null) {
                             if (exception.contains("no user record")) {
                                 errorMsg = "Tài khoản không tồn tại";
-                            } else if (exception.contains("password is invalid")) {
+                            } else if (exception.contains("password is invalid") || exception.contains("wrong-password")) {
                                 errorMsg = "Mật khẩu không đúng";
+                            } else if (exception.contains("too-many-requests")) {
+                                errorMsg = "Quá nhiều lần thử. Vui lòng thử lại sau";
                             }
                         }
                     }
                     Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
                 }
             });
+    }
+    
+    private void showResendVerificationOption(FirebaseUser user) {
+        // Show dialog to ask if user wants to resend verification email
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Email chưa xác thực")
+            .setMessage("Bạn có muốn gửi lại email xác thực không?")
+            .setPositiveButton("Gửi lại", (dialog, which) -> {
+                user.sendEmailVerification().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(this, "Email xác thực đã được gửi!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Không thể gửi email. Vui lòng thử lại sau.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            })
+            .setNegativeButton("Đóng", null)
+            .show();
     }
 
     private void goToMain() {
