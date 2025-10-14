@@ -64,7 +64,21 @@
                     android:textSize="12sp"
                     android:textColor="@android:color/white"
                     android:background="@drawable/badge_bg" />
-
+                <ImageView
+                    android:id="@+id/ivSentiment"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="sentiment icon"
+                    android:src="@drawable/neutral"
+                    android:background="@drawable/neutral_background"/>
+                <ImageView
+                    android:id="@+id/ivSpam"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="6dp"
+                    android:src="@drawable/nospam"
+                    android:contentDescription="spam icon"/>
                 <TextView
                     android:id="@+id/tvDate"
                     android:layout_width="wrap_content"

@@ -31,8 +31,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override
+    @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.activity_item_news, parent, false);
@@ -43,26 +42,75 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int p) {
         NewsItem it = items.get(p);
 
+        // Title
         String title = it.getTitle();
         if (title == null || title.trim().isEmpty()) {
             String tc = it.getText_content();
-            title = tc == null ? "" : (tc.length() > 120 ? tc.substring(0, 120) + "…" : tc);
+            title = tc == null ? "" : (tc.length() > 120 ? tc.substring(0,120) + "…" : tc);
         }
         h.title.setText(title);
 
-        String img = null;
-        if (it.getImage_contents() != null && !it.getImage_contents().isEmpty()) img = it.getImage_contents().get(0);
-        Glide.with(h.img).load(img).placeholder(R.drawable.news1).error(R.drawable.news1).centerCrop().into(h.img);
+        // Image
+        String img = (it.getImage_contents()!=null && !it.getImage_contents().isEmpty())
+                ? it.getImage_contents().get(0) : null;
+        Glide.with(h.img).load(img)
+                .placeholder(R.drawable.hotnews)
+                .error(R.drawable.hotnews)
+                .centerCrop()
+                .into(h.img);
 
+        // Source + date
         String src = domain(it.getSource_url() != null ? it.getSource_url() : it.getUrl());
-        h.chipSource.setText(src.isEmpty() ? "news" : src);
+        h.chipSource.setText(src.isEmpty() ? "facebook.com" : src);
 
         String d = it.getCrawled_at();
-        h.tvDate.setText(d != null && d.length() >= 10 ? d.substring(0, 10) : "");
+        h.tvDate.setText(d != null && d.length() >= 10 ? d.substring(0,10) : "");
 
+        // Sentiment icon
+        h.ivSentiment.setImageResource(mapSentiment(it.getSentiment_label()));
+        h.ivSpam.setImageResource(mapSpam(it.getSpam_label()));
+        // Click
         h.itemView.setOnClickListener(v -> onClick.click(it));
     }
 
+    @Override
+    public int getItemCount() { return items.size(); }
+
+    public static class VH extends RecyclerView.ViewHolder {
+        ImageView img, ivSentiment, ivSpam;
+        TextView title, chipSource, tvDate;
+        VH(@NonNull View v) {
+            super(v);
+            img = v.findViewById(R.id.imgNews);
+            title = v.findViewById(R.id.tvNewsTitle);
+            chipSource = v.findViewById(R.id.chipSource);
+            tvDate = v.findViewById(R.id.tvDate);
+            ivSentiment = v.findViewById(R.id.ivSentiment);
+            ivSpam = v.findViewById(R.id.ivSpam);
+        }
+    }
+
+    private int mapSentiment(String label) {
+        if (label == null) return R.drawable.neutral;
+        label = label.trim().toLowerCase();
+        switch (label) {
+            case "tich cuc":
+            case "tích cực":
+            case "positive": return R.drawable.positive;
+            case "tieu cuc":
+            case "tiêu cực":
+            case "negative": return R.drawable.negative;
+            case "binh thuong":
+            case "bình thường":
+            case "neutral":
+            default: return R.drawable.neutral;
+        }
+    }
+    private int mapSpam(String label) {
+        if (label == null) return R.drawable.nospam;
+        label = label.trim().toLowerCase();
+        return label.equals("spam") ? R.drawable.spam : R.drawable.nospam;
+    }
     private String domain(String u) {
         if (u == null || u.isEmpty()) return "";
         try {
@@ -71,21 +119,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
             return host != null ? host.replaceFirst("^www\\.", "") : "";
         } catch (Exception e) { return ""; }
     }
-
-    @Override
-    public int getItemCount() { return items.size(); }
-
-    protected static class VH extends RecyclerView.ViewHolder {
-        ImageView img;
-        TextView title;
-        TextView chipSource;
-        TextView tvDate;
-        VH(@NonNull View v) {
-            super(v);
-            img = v.findViewById(R.id.imgNews);
-            title = v.findViewById(R.id.tvNewsTitle);
-            chipSource = v.findViewById(R.id.chipSource);
-            tvDate = v.findViewById(R.id.tvDate);
-        }
+    public void addAll(List<NewsItem> list) {
+        int start = items.size();
+        items.addAll(list);
+        notifyItemRangeInserted(start, list.size());
     }
+
 }

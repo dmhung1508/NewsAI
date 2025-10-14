@@ -80,6 +80,10 @@ public class DetailActivity extends AppCompatActivity {
                 it.getStringExtra(K_SENTIMENT),
                 it.getStringExtra(K_SPAM)
         );
+        findViewById(R.id.fabChatbot).setOnClickListener(v -> {
+            Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void bindViews() {

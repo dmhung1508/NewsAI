@@ -12,10 +12,12 @@ import retrofit2.http.Query;
 public interface ApiService {
     @GET("articles")
     Call<List<NewsItem>> getArticles();
-
+    @GET("articles")
+    Call<List<NewsItem>> getArticles(@Query("skip") int skip, @Query("limit") int limit);
     @GET("facebook_posts")
     Call<List<NewsItem>> getFacebookPosts();
-    
+    @GET("facebook_posts")
+    Call<List<NewsItem>> getFacebookPosts(@Query("skip") int skip, @Query("limit") int limit);
     // Get article by ID
     @GET("articles/{article_id}")
     Call<NewsItem> getArticleById(@Path("article_id") String articleId);

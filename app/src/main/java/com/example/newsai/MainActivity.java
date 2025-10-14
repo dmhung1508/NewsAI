@@ -9,12 +9,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -49,6 +49,11 @@ public class MainActivity extends AppCompatActivity {
     private boolean isClusterMode = false;
     private String currentFilter = "home"; // home, newest, web, facebook, positive, negative
     private List<NewsItem> allNews = new ArrayList<>();
+
+    // Biến dùng cho phân trang bài viết
+    private int currentSkip = 0;
+    private final int limit = 20;
+    private boolean isLoadingMore = false;
 
     // Notification permission launcher
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -88,11 +93,26 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Lắng nghe kéo xuống cuối danh sách để tải thêm (chỉ dùng cho trang chủ)
+        rvNews.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                // canScrollVertically(1) == false nghĩa là đã ở cuối danh sách
+                if (!recyclerView.canScrollVertically(1)
+                        && !isLoadingMore
+                        && !isClusterMode
+                        && currentFilter.equals("home")) {
+                    loadMoreNews();
+                }
+            }
+        });
+
         // Request notification permission and subscribe to topic
         requestNotificationPermission();
 
+        // Tải trang đầu tiên của trang chủ (gồm bài báo và bài Facebook)
         loadNews();
-        loadFaceBookposts();
     }
 
     private void showFilterMenu() {
@@ -106,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Trang chủ");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
+            // Reset phân trang và tải lại trang đầu tiên
             loadNews();
             bottomSheet.dismiss();
         });
@@ -126,9 +147,9 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Báo điện tử");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            filterNewsByType("article");
+            loadNews();               // nạp lại dữ liệu
             bottomSheet.dismiss();
-            loadNews();
+            filterNewsByType("article");
         });
 
         // Facebook
@@ -137,9 +158,9 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Facebook");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            filterNewsByType("facebook_post");
+            loadNews();               // nạp lại dữ liệu
             bottomSheet.dismiss();
-            loadFaceBookposts();
+            filterNewsByType("facebook_post");
         });
 
         // Positive sentiment
@@ -148,7 +169,6 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Tin tích cực");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            filterNewsBySentiment("positive");
             bottomSheet.dismiss();
             loadAllNewsThenFilterBySentiment("tich cuc");
         });
@@ -159,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Tin tiêu cực");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            filterNewsBySentiment("negative");
             bottomSheet.dismiss();
             loadAllNewsThenFilterBySentiment("tieu cuc");
         });
@@ -167,12 +186,65 @@ public class MainActivity extends AppCompatActivity {
         bottomSheet.show();
     }
 
+    /** Reset phân trang và tải trang đầu tiên gồm articles + facebook_posts */
+    private void loadNews() {
+        currentSkip = 0;
+        allNews = new ArrayList<>();
+        newsAdapter.submit(new ArrayList<>());
+        loadMoreNews();
+    }
+
+    /** Tải thêm 20 bài mới (bài báo + facebook) */
+    private void loadMoreNews() {
+        isLoadingMore = true;
+        ApiService api = ApiClient.get().create(ApiService.class);
+        List<NewsItem> newBatch = new ArrayList<>();
+        // Gọi API lấy articles với skip/limit
+        api.getArticles(currentSkip, limit).enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
+                if (r1.isSuccessful() && r1.body() != null) {
+                    newBatch.addAll(r1.body());
+                }
+                // Sau khi lấy articles, lấy facebook_posts với cùng skip/limit
+                api.getFacebookPosts(currentSkip, limit).enqueue(new Callback<List<NewsItem>>() {
+                    @Override
+                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
+                        if (r2.isSuccessful() && r2.body() != null) {
+                            newBatch.addAll(r2.body());
+                        }
+                        // Cập nhật vị trí skip và danh sách dữ liệu
+                        currentSkip += limit;
+                        allNews.addAll(newBatch);
+                        if (newBatch.size() > 0) {
+                            newsAdapter.addAll(newBatch); // cần thêm hàm addAll() trong NewsAdapter
+                        }
+                        isLoadingMore = false;
+                    }
+
+                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                        currentSkip += limit;
+                        allNews.addAll(newBatch);
+                        if (newBatch.size() > 0) {
+                            newsAdapter.addAll(newBatch);
+                        }
+                        isLoadingMore = false;
+                    }
+                });
+            }
+
+            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                // Không thành công, dừng trạng thái loading
+                isLoadingMore = false;
+            }
+        });
+    }
+
+    /** Lọc theo loại bài trên danh sách đã nạp */
     private void filterNewsByType(String type) {
         if (allNews.isEmpty()) {
-            loadNews();
             return;
         }
-
         List<NewsItem> filtered = new ArrayList<>();
         for (NewsItem item : allNews) {
             if (type.equals(item.getType())) {
@@ -180,18 +252,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         newsAdapter.submit(filtered);
-
-        // if (filtered.isEmpty()) {
-        //     Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
-        // }
+        // Bạn có thể hiển thị Toast nếu danh sách rỗng
     }
 
+    /** Lọc theo nhãn sentiment (positive/negative) */
     private void filterNewsBySentiment(String sentiment) {
         if (allNews.isEmpty()) {
-            loadNews();
             return;
         }
-
         List<NewsItem> filtered = new ArrayList<>();
         for (NewsItem item : allNews) {
             String itemSentiment = item.getSentiment_label();
@@ -200,10 +268,39 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         newsAdapter.submit(filtered);
+    }
 
-        // if (filtered.isEmpty()) {
-        //     Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
-        // }
+    /** Lấy toàn bộ dữ liệu (skip=0) rồi lọc theo sentiment */
+    private void loadAllNewsThenFilterBySentiment(final String sentiment) {
+        ApiService api = ApiClient.get().create(ApiService.class);
+        List<NewsItem> combined = new ArrayList<>();
+        api.getArticles(0, 100).enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
+                if (r1.isSuccessful() && r1.body() != null) {
+                    combined.addAll(r1.body());
+                }
+                api.getFacebookPosts(0, 100).enqueue(new Callback<List<NewsItem>>() {
+                    @Override
+                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
+                        if (r2.isSuccessful() && r2.body() != null) {
+                            combined.addAll(r2.body());
+                        }
+                        allNews = combined;
+                        filterNewsBySentiment(sentiment);
+                    }
+
+                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                        allNews = combined;
+                        filterNewsBySentiment(sentiment);
+                    }
+                });
+            }
+
+            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                Log.e("API", "FAIL", t);
+            }
+        });
     }
 
     private void requestNotificationPermission() {
@@ -230,82 +327,6 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void toggleMode() {
-        isClusterMode = !isClusterMode;
-
-        if (isClusterMode) {
-            tvTitle.setText("Cụm tin");
-            rvNews.setAdapter(clusterAdapter);
-            loadClusters();
-        } else {
-            tvTitle.setText("Mới và Hot");
-            rvNews.setAdapter(newsAdapter);
-            loadNews();
-        }
-    }
-
-    private void loadNews() {
-        ApiService api = ApiClient.get().create(ApiService.class);
-        api.getArticles().enqueue(new Callback<List<NewsItem>>() {
-            @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res) {
-                if (res.isSuccessful() && res.body() != null) {
-                    allNews = res.body();
-                    newsAdapter.submit(allNews);
-                }
-                else Log.e("API", "HTTP " + res.code());
-            }
-            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
-                Log.e("API", "FAIL", t);
-            }
-        });
-    }
-    private void loadFaceBookposts() {
-        ApiService api = ApiClient.get().create(ApiService.class);
-        api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>() {
-            @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res) {
-                if (res.isSuccessful() && res.body() != null) {
-                    allNews = res.body();
-                    newsAdapter.submit(allNews);
-                }
-                else Log.e("API", "HTTP " + res.code());
-            }
-            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
-                Log.e("API", "FAIL", t);
-            }
-        });
-    }
-    private void loadAllNewsThenFilterBySentiment(final String sentiment) {
-        ApiService api = ApiClient.get().create(ApiService.class);
-        List<NewsItem> combined = new ArrayList<>();
-        api.getArticles().enqueue(new Callback<List<NewsItem>>() {
-            @Override
-            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
-                if (r1.isSuccessful() && r1.body() != null) {
-                    combined.addAll(r1.body());
-                }
-                // sau khi lấy articles, tiếp tục lấy facebook_posts
-                api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>() {
-                    @Override
-                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
-                        if (r2.isSuccessful() && r2.body() != null) {
-                            combined.addAll(r2.body());
-                        }
-                        allNews = combined;
-                        // lọc theo sentiment sau khi đã có đủ dữ liệu
-                        filterNewsBySentiment(sentiment);
-                    }
-                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
-                        allNews = combined;
-                        filterNewsBySentiment(sentiment);
-                    }
-                });
-            }
-            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
-                Log.e("API", "FAIL", t);
-            }
-        });
-    }
-
     private void loadClusters() {
         ApiService api = ApiClient.get().create(ApiService.class);
         api.getTopClusters(20).enqueue(new Callback<List<ClusterItem>>() {
@@ -321,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void openDetail(NewsItem it) {
         Intent intent = new Intent(this, DetailActivity.class);
-        String img = (it.getImage_contents()!=null && !it.getImage_contents().isEmpty())
+        String img = (it.getImage_contents() != null && !it.getImage_contents().isEmpty())
                 ? it.getImage_contents().get(0) : null;
         intent.putExtra(DetailActivity.K_TITLE, it.getTitle());
         intent.putExtra(DetailActivity.K_IMAGE, img);
@@ -329,6 +350,9 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(DetailActivity.K_SOURCE_URL, it.getSource_url());
         intent.putExtra(DetailActivity.K_CONTENT, it.getText_content());
         intent.putExtra(DetailActivity.K_DATE, it.getCrawled_at());
+        intent.putExtra(DetailActivity.K_SENTIMENT, it.getSentiment_label());
+        intent.putExtra(DetailActivity.K_SPAM, it.getSpam_label());
+        intent.putExtra(DetailActivity.K_POSTED, it.getPosted_at());
         startActivity(intent);
     }
 
@@ -337,6 +361,4 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("cluster_id", cluster.getCluster_id());
         startActivity(intent);
     }
-
-
 }
