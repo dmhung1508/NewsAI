@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,9 +26,11 @@ import com.example.newsai.network.ApiClient;
 import com.example.newsai.network.ApiService;
 import com.example.newsai.ui.ClusterAdapter;
 import com.example.newsai.ui.NewsAdapter;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTitle;
     private ImageButton ivMenu;
     private boolean isClusterMode = false;
+    private String currentFilter = "home"; // home, newest, web, facebook, positive, negative
+    private List<NewsItem> allNews = new ArrayList<>();
     
     // Notification permission launcher
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -74,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
         TextView tvDate = findViewById(R.id.tvDate);
         tvDate.setText(new SimpleDateFormat("EEE, dd.MM", Locale.getDefault()).format(new Date()));
 
-        // Toggle between News and Clusters
-        ivMenu.setOnClickListener(v -> toggleMode());
+        // Open filter menu
+        ivMenu.setOnClickListener(v -> showFilterMenu());
         
         ImageView btnAccount = findViewById(R.id.btnAccount);
         btnAccount.setOnClickListener(v -> {
@@ -87,6 +92,123 @@ public class MainActivity extends AppCompatActivity {
         requestNotificationPermission();
 
         loadNews();
+    }
+    
+    private void showFilterMenu() {
+        BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filter, null);
+        bottomSheet.setContentView(view);
+        
+        // Home
+        view.findViewById(R.id.btnHome).setOnClickListener(v -> {
+            currentFilter = "home";
+            tvTitle.setText("Trang chủ");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            loadNews();
+            bottomSheet.dismiss();
+        });
+        
+        // Clusters
+        view.findViewById(R.id.btnClusters).setOnClickListener(v -> {
+            currentFilter = "clusters";
+            tvTitle.setText("Cụm tin");
+            isClusterMode = true;
+            rvNews.setAdapter(clusterAdapter);
+            loadClusters();
+            bottomSheet.dismiss();
+        });
+        
+        // Newest
+        view.findViewById(R.id.btnNewest).setOnClickListener(v -> {
+            currentFilter = "newest";
+            tvTitle.setText("Mới nhất");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            loadNews();
+            bottomSheet.dismiss();
+        });
+        
+        // Web
+        view.findViewById(R.id.btnWeb).setOnClickListener(v -> {
+            currentFilter = "web";
+            tvTitle.setText("Báo điện tử");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            filterNewsByType("article");
+            bottomSheet.dismiss();
+        });
+        
+        // Facebook
+        view.findViewById(R.id.btnFacebook).setOnClickListener(v -> {
+            currentFilter = "facebook";
+            tvTitle.setText("Facebook");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            filterNewsByType("facebook_post");
+            bottomSheet.dismiss();
+        });
+        
+        // Positive sentiment
+        view.findViewById(R.id.btnPositive).setOnClickListener(v -> {
+            currentFilter = "positive";
+            tvTitle.setText("Tin tích cực");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            filterNewsBySentiment("positive");
+            bottomSheet.dismiss();
+        });
+        
+        // Negative sentiment
+        view.findViewById(R.id.btnNegative).setOnClickListener(v -> {
+            currentFilter = "negative";
+            tvTitle.setText("Tin tiêu cực");
+            isClusterMode = false;
+            rvNews.setAdapter(newsAdapter);
+            filterNewsBySentiment("negative");
+            bottomSheet.dismiss();
+        });
+        
+        bottomSheet.show();
+    }
+    
+    private void filterNewsByType(String type) {
+        if (allNews.isEmpty()) {
+            loadNews();
+            return;
+        }
+        
+        List<NewsItem> filtered = new ArrayList<>();
+        for (NewsItem item : allNews) {
+            if (type.equals(item.getType())) {
+                filtered.add(item);
+            }
+        }
+        newsAdapter.submit(filtered);
+        
+        if (filtered.isEmpty()) {
+            Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void filterNewsBySentiment(String sentiment) {
+        if (allNews.isEmpty()) {
+            loadNews();
+            return;
+        }
+        
+        List<NewsItem> filtered = new ArrayList<>();
+        for (NewsItem item : allNews) {
+            String itemSentiment = item.getSentiment_label();
+            if (sentiment.equals(itemSentiment)) {
+                filtered.add(item);
+            }
+        }
+        newsAdapter.submit(filtered);
+        
+        if (filtered.isEmpty()) {
+            Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void requestNotificationPermission() {
@@ -131,7 +253,10 @@ public class MainActivity extends AppCompatActivity {
         ApiService api = ApiClient.get().create(ApiService.class);
         api.getArticles().enqueue(new Callback<List<NewsItem>>() {
             @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res) {
-                if (res.isSuccessful() && res.body() != null) newsAdapter.submit(res.body());
+                if (res.isSuccessful() && res.body() != null) {
+                    allNews = res.body();
+                    newsAdapter.submit(allNews);
+                }
                 else Log.e("API", "HTTP " + res.code());
             }
             @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {

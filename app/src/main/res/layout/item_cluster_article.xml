@@ -7,7 +7,9 @@
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:strokeWidth="0dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">
@@ -15,34 +17,17 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="0dp">
+        android:padding="12dp">
 
-        <!-- Rank Badge -->
-        <TextView
-            android:id="@+id/tvRank"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:text="1"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:background="@drawable/badge_bg"
-            android:gravity="center"
-            android:elevation="4dp"
-            android:layout_margin="12dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Article Image -->
+        <!-- Article Image with default -->
         <ImageView
             android:id="@+id/imgArticle"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:scaleType="centerCrop"
-            android:background="#F5F5F5"
+            android:src="@drawable/hotnews"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Content Container -->
         <LinearLayout
@@ -55,21 +40,40 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 
-            <!-- Source Badge -->
-            <TextView
-                android:id="@+id/tvSourceBadge"
-                android:layout_width="wrap_content"
+            <!-- Source Badge Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Facebook"
-                android:textSize="10sp"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:background="@drawable/badge_source"
-                android:layout_marginBottom="6dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:id="@+id/tvSourceBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Facebook"
+                    android:textSize="11sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:background="@drawable/badge_source"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Time indicator (optional) -->
+                <TextView
+                    android:id="@+id/tvTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="• 5 phút trước"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_gray"
+                    android:visibility="gone" />
+
+            </LinearLayout>
 
             <!-- Article Title -->
             <TextView
@@ -77,13 +81,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Tiêu đề bài viết trong cụm tin tức"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="@color/title_black"
                 android:fontFamily="@font/ibmplexsans_semibold"
                 android:maxLines="3"
                 android:ellipsize="end"
-                android:lineSpacingExtra="3dp"
+                android:lineSpacingExtra="2dp"
                 android:layout_marginBottom="6dp" />
 
             <!-- Article Text Preview -->

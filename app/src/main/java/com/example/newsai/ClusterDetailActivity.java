@@ -99,47 +99,63 @@ public class ClusterDetailActivity extends AppCompatActivity {
     private void addArticleView(NewsItem article, int rank) {
         View itemView = getLayoutInflater().inflate(R.layout.item_cluster_article, articlesContainer, false);
         
-        TextView tvRank = itemView.findViewById(R.id.tvRank);
         TextView tvArticleTitle = itemView.findViewById(R.id.tvArticleTitle);
         TextView tvArticleText = itemView.findViewById(R.id.tvArticleText);
         TextView tvSourceBadge = itemView.findViewById(R.id.tvSourceBadge);
         ImageView imgArticle = itemView.findViewById(R.id.imgArticle);
         
-        tvRank.setText(String.valueOf(rank + 1));
-        tvArticleTitle.setText(article.getTitle() != null ? article.getTitle() : "");
+        // Handle title
+        String title = article.getTitle();
+        if (title != null && !title.isEmpty()) {
+            tvArticleTitle.setText(title);
+            tvArticleTitle.setVisibility(View.VISIBLE);
+        } else {
+            // If no title, show text preview as title
+            String text = article.getText_content();
+            if (text != null && !text.isEmpty()) {
+                String preview = text.length() > 100 ? text.substring(0, 100) + "..." : text;
+                tvArticleTitle.setText(preview);
+                tvArticleTitle.setVisibility(View.VISIBLE);
+            } else {
+                tvArticleTitle.setText("Bài viết không có tiêu đề");
+                tvArticleTitle.setVisibility(View.VISIBLE);
+            }
+        }
         
         // Display article text/preview
         String text = article.getText_content();
-        if (text != null && !text.isEmpty()) {
+        if (text != null && !text.isEmpty() && title != null && !title.isEmpty()) {
             tvArticleText.setVisibility(View.VISIBLE);
-            // Limit text to ~200 characters for preview
-            String preview = text.length() > 200 ? text.substring(0, 200) + "..." : text;
+            // Limit text to ~150 characters for preview
+            String preview = text.length() > 150 ? text.substring(0, 150) + "..." : text;
             tvArticleText.setText(preview);
         } else {
             tvArticleText.setVisibility(View.GONE);
         }
         
-        // Load image
+        // Load image with default fallback
         List<String> images = article.getImage_contents();
-        if (images != null && !images.isEmpty()) {
+        if (images != null && !images.isEmpty() && images.get(0) != null) {
             String imageUrl = images.get(0);
             Glide.with(this)
                     .load(imageUrl)
-                    .placeholder(android.R.color.white)
-                    .error(android.R.color.white)
+                    .placeholder(R.drawable.hotnews)
+                    .error(R.drawable.hotnews)
                     .centerCrop()
                     .into(imgArticle);
-            imgArticle.setVisibility(View.VISIBLE);
         } else {
-            imgArticle.setVisibility(View.GONE);
+            // Set default image
+            imgArticle.setImageResource(R.drawable.hotnews);
+            imgArticle.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         }
+        imgArticle.setVisibility(View.VISIBLE);
         
         // Determine source badge
         String type = article.getType();
         if (type != null && type.equals("facebook_post")) {
-            tvSourceBadge.setText("Facebook");
+            tvSourceBadge.setText("📱 Facebook");
         } else {
-            tvSourceBadge.setText("Web");
+            tvSourceBadge.setText("🌐 Web");
         }
         
         // Click to open DetailActivity

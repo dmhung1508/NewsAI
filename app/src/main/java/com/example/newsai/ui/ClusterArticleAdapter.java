@@ -80,7 +80,7 @@ public class ClusterArticleAdapter extends RecyclerView.Adapter<ClusterArticleAd
 
         VH(@NonNull View v) {
             super(v);
-            tvRank = v.findViewById(R.id.tvRank);
+//            tvRank = v.findViewById(R.id.tvRank);
             tvArticleTitle = v.findViewById(R.id.tvArticleTitle);
             tvArticleText = v.findViewById(R.id.tvArticleText);
             tvSourceBadge = v.findViewById(R.id.tvSourceBadge);
