@@ -46,6 +46,9 @@ dependencies {
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
+    
+    // Firebase Cloud Messaging for notifications
+    implementation("com.google.firebase:firebase-messaging")
 
     // Also add the dependencies for the Credential Manager libraries and specify their versions
     implementation("androidx.credentials:credentials:1.5.0")

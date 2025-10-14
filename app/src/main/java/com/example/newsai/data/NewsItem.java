@@ -17,7 +17,8 @@ public class NewsItem {
     private String crawled_at;
     private String type;
     private Integer content_length;
-
+    private String sentiment_label;
+    private String spam_label;
     public String get_id() { return _id; }
     public String getUrl() { return url; }
     public String getSource_url() { return source_url; }
@@ -32,4 +33,9 @@ public class NewsItem {
     public String getCrawled_at() { return crawled_at; }
     public String getType() { return type; }
     public Integer getContent_length() { return content_length; }
+    public String getSentiment_label() { return sentiment_label; }
+    public void setSentiment_label(String s) { this.sentiment_label = s; }
+    public String getSpam_label() { return spam_label; }
+    public void setSpam_label(String s) { this.spam_label = s; }
+
 }

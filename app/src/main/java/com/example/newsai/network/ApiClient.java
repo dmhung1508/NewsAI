@@ -18,7 +18,7 @@ public class ApiClient {
                     .build();
 
             instance = new Retrofit.Builder()
-                    .baseUrl("https://db.dinhmanhhung.net/")   // emulator ↔ host
+                    .baseUrl("https://db.dinhmanhhung.net/")
                     .addConverterFactory(MoshiConverterFactory.create())
                     .client(client)
                     .build();

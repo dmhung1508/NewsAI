@@ -1,14 +1,21 @@
 package com.example.newsai;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -18,6 +25,7 @@ import com.example.newsai.network.ApiClient;
 import com.example.newsai.network.ApiService;
 import com.example.newsai.ui.ClusterAdapter;
 import com.example.newsai.ui.NewsAdapter;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,6 +44,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTitle;
     private ImageButton ivMenu;
     private boolean isClusterMode = false;
+    
+    // Notification permission launcher
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    Log.d("FCM", "Notification permission granted");
+                    subscribeToNewsClusters();
+                } else {
+                    Log.d("FCM", "Notification permission denied");
+                    Toast.makeText(this, "Bạn sẽ không nhận được thông báo cụm tin mới", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +83,34 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Request notification permission and subscribe to topic
+        requestNotificationPermission();
+
         loadNews();
+    }
+    
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                subscribeToNewsClusters();
+            } else {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        } else {
+            subscribeToNewsClusters();
+        }
+    }
+    
+    private void subscribeToNewsClusters() {
+        FirebaseMessaging.getInstance().subscribeToTopic("news_clusters")
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("FCM", "Subscribed to news_clusters topic");
+                    } else {
+                        Log.e("FCM", "Failed to subscribe to topic", task.getException());
+                    }
+                });
     }
 
     private void toggleMode() {
