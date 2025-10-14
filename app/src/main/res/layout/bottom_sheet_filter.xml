@@ -122,41 +122,6 @@
         android:layout_marginStart="40dp"
         android:background="#F0F0F0" />
 
-    <!-- Mới nhất -->
-    <LinearLayout
-        android:id="@+id/btnNewest"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:background="?attr/selectableItemBackground"
-        android:gravity="center_vertical">
-
-        <View
-            android:layout_width="4dp"
-            android:layout_height="24dp"
-            android:background="#4CAF50"
-            android:layout_marginEnd="16dp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Mới nhất"
-            android:textSize="15sp"
-            android:textColor="#212121"
-            android:fontFamily="sans-serif-medium" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Realtime"
-            android:textSize="12sp"
-            android:textColor="#9E9E9E" />
-    </LinearLayout>
 
     <View
         android:layout_width="match_parent"

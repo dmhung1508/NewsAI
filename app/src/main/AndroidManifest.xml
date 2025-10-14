@@ -76,7 +76,10 @@
         <activity android:name=".ProfileActivity" android:exported="true"/>
         <activity android:name=".DetailActivity" android:exported="true"/>
         <activity android:name=".ChatbotActivity" android:exported="true"/>
-        <activity android:name=".ClusterDetailActivity" android:exported="true"/>
+        <activity 
+            android:name=".ClusterDetailActivity" 
+            android:exported="true"
+            android:launchMode="singleTop"/>
         <activity android:name=".NotificationsActivity" android:exported="false"/>
 
     </application>

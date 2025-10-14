@@ -38,6 +38,8 @@ public class ClusterDetailActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         clusterId = intent.getStringExtra("cluster_id");
+        
+        Log.d("ClusterDetail", "Received cluster_id: " + clusterId);
 
         viewPager = findViewById(R.id.viewPager);
         TextView tvTitle = findViewById(R.id.tvTitle);
@@ -45,8 +47,30 @@ public class ClusterDetailActivity extends AppCompatActivity {
         TextView tvMeta = findViewById(R.id.tvMeta);
         articlesContainer = findViewById(R.id.articlesContainer);
 
+        if (clusterId == null || clusterId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy cụm tin", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         // Load cluster data from API
         loadClusterDetail();
+    }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        
+        // Handle new cluster_id from notification
+        String newClusterId = intent.getStringExtra("cluster_id");
+        Log.d("ClusterDetail", "onNewIntent - Received cluster_id: " + newClusterId);
+        
+        if (newClusterId != null && !newClusterId.equals(clusterId)) {
+            clusterId = newClusterId;
+            articlesContainer.removeAllViews();
+            loadClusterDetail();
+        }
     }
 
     private void loadClusterDetail() {

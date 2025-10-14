@@ -4,6 +4,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
@@ -64,17 +66,29 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManager notificationManager = 
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        // Create intent to open ClusterDetailActivity
-        Intent intent = new Intent(this, ClusterDetailActivity.class);
-        intent.putExtra("cluster_id", clusterId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        // Create intent stack to navigate properly
+        // First MainActivity, then ClusterDetailActivity
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 
-                0, 
-                intent, 
-                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
+        Intent clusterIntent = new Intent(this, ClusterDetailActivity.class);
+        clusterIntent.putExtra("cluster_id", clusterId);
+        clusterIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        
+        Log.d(TAG, "Creating notification for cluster_id: " + clusterId);
+        
+        // Use TaskStackBuilder to create proper back stack
+        android.app.TaskStackBuilder stackBuilder = android.app.TaskStackBuilder.create(this);
+        stackBuilder.addNextIntent(mainIntent);
+        stackBuilder.addNextIntent(clusterIntent);
+        
+        PendingIntent pendingIntent = stackBuilder.getPendingIntent(
+                (int) System.currentTimeMillis(),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+
+        // Get default notification sound
+        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         // Build notification
         String contentText = message != null ? message : "Nhấn để xem chi tiết";
@@ -91,16 +105,23 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                                 .bigText(contentText))
                         .setAutoCancel(true)
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setSound(defaultSoundUri)
+                        .setVibrate(new long[]{0, 500, 250, 500})
                         .setContentIntent(pendingIntent);
 
         notificationManager.notify(
                 (int) System.currentTimeMillis(), 
                 notificationBuilder.build()
         );
+        
+        Log.d(TAG, "Notification sent for cluster: " + clusterId);
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Get default notification sound
+            Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     CHANNEL_NAME,
@@ -108,10 +129,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             );
             channel.setDescription("Nhận thông báo khi có cụm tin mới");
             channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 500, 250, 500});
+            channel.enableLights(true);
+            channel.setSound(defaultSoundUri, null);
+            channel.setShowBadge(true);
             
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
+                Log.d(TAG, "Notification channel created with sound");
             }
         }
     }

@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isClusterMode = false;
     private String currentFilter = "home"; // home, newest, web, facebook, positive, negative
     private List<NewsItem> allNews = new ArrayList<>();
-    
+
     // Notification permission launcher
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         ivMenu = findViewById(R.id.ivMenu);
         rvNews = findViewById(R.id.rvNews);
         rvNews.setLayoutManager(new LinearLayoutManager(this));
-        
+
         newsAdapter = new NewsAdapter(this::openDetail);
         clusterAdapter = new ClusterAdapter(this::openClusterDetail);
         rvNews.setAdapter(newsAdapter);
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Open filter menu
         ivMenu.setOnClickListener(v -> showFilterMenu());
-        
+
         ImageView btnAccount = findViewById(R.id.btnAccount);
         btnAccount.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
@@ -92,13 +92,14 @@ public class MainActivity extends AppCompatActivity {
         requestNotificationPermission();
 
         loadNews();
+        loadFaceBookposts();
     }
-    
+
     private void showFilterMenu() {
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filter, null);
         bottomSheet.setContentView(view);
-        
+
         // Home
         view.findViewById(R.id.btnHome).setOnClickListener(v -> {
             currentFilter = "home";
@@ -108,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
             loadNews();
             bottomSheet.dismiss();
         });
-        
+
         // Clusters
         view.findViewById(R.id.btnClusters).setOnClickListener(v -> {
             currentFilter = "clusters";
@@ -118,17 +119,7 @@ public class MainActivity extends AppCompatActivity {
             loadClusters();
             bottomSheet.dismiss();
         });
-        
-        // Newest
-        view.findViewById(R.id.btnNewest).setOnClickListener(v -> {
-            currentFilter = "newest";
-            tvTitle.setText("Mới nhất");
-            isClusterMode = false;
-            rvNews.setAdapter(newsAdapter);
-            loadNews();
-            bottomSheet.dismiss();
-        });
-        
+
         // Web
         view.findViewById(R.id.btnWeb).setOnClickListener(v -> {
             currentFilter = "web";
@@ -137,8 +128,9 @@ public class MainActivity extends AppCompatActivity {
             rvNews.setAdapter(newsAdapter);
             filterNewsByType("article");
             bottomSheet.dismiss();
+            loadNews();
         });
-        
+
         // Facebook
         view.findViewById(R.id.btnFacebook).setOnClickListener(v -> {
             currentFilter = "facebook";
@@ -147,8 +139,9 @@ public class MainActivity extends AppCompatActivity {
             rvNews.setAdapter(newsAdapter);
             filterNewsByType("facebook_post");
             bottomSheet.dismiss();
+            loadFaceBookposts();
         });
-        
+
         // Positive sentiment
         view.findViewById(R.id.btnPositive).setOnClickListener(v -> {
             currentFilter = "positive";
@@ -157,8 +150,9 @@ public class MainActivity extends AppCompatActivity {
             rvNews.setAdapter(newsAdapter);
             filterNewsBySentiment("positive");
             bottomSheet.dismiss();
+            loadAllNewsThenFilterBySentiment("tich cuc");
         });
-        
+
         // Negative sentiment
         view.findViewById(R.id.btnNegative).setOnClickListener(v -> {
             currentFilter = "negative";
@@ -167,17 +161,18 @@ public class MainActivity extends AppCompatActivity {
             rvNews.setAdapter(newsAdapter);
             filterNewsBySentiment("negative");
             bottomSheet.dismiss();
+            loadAllNewsThenFilterBySentiment("tieu cuc");
         });
-        
+
         bottomSheet.show();
     }
-    
+
     private void filterNewsByType(String type) {
         if (allNews.isEmpty()) {
             loadNews();
             return;
         }
-        
+
         List<NewsItem> filtered = new ArrayList<>();
         for (NewsItem item : allNews) {
             if (type.equals(item.getType())) {
@@ -185,18 +180,18 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         newsAdapter.submit(filtered);
-        
-        if (filtered.isEmpty()) {
-            Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
-        }
+
+        // if (filtered.isEmpty()) {
+        //     Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
+        // }
     }
-    
+
     private void filterNewsBySentiment(String sentiment) {
         if (allNews.isEmpty()) {
             loadNews();
             return;
         }
-        
+
         List<NewsItem> filtered = new ArrayList<>();
         for (NewsItem item : allNews) {
             String itemSentiment = item.getSentiment_label();
@@ -205,12 +200,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         newsAdapter.submit(filtered);
-        
-        if (filtered.isEmpty()) {
-            Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
-        }
+
+        // if (filtered.isEmpty()) {
+        //     Toast.makeText(this, "Không có bài viết nào", Toast.LENGTH_SHORT).show();
+        // }
     }
-    
+
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -223,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
             subscribeToNewsClusters();
         }
     }
-    
+
     private void subscribeToNewsClusters() {
         FirebaseMessaging.getInstance().subscribeToTopic("news_clusters")
                 .addOnCompleteListener(task -> {
@@ -237,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void toggleMode() {
         isClusterMode = !isClusterMode;
-        
+
         if (isClusterMode) {
             tvTitle.setText("Cụm tin");
             rvNews.setAdapter(clusterAdapter);
@@ -264,7 +259,53 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    
+    private void loadFaceBookposts() {
+        ApiService api = ApiClient.get().create(ApiService.class);
+        api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>() {
+            @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    allNews = res.body();
+                    newsAdapter.submit(allNews);
+                }
+                else Log.e("API", "HTTP " + res.code());
+            }
+            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                Log.e("API", "FAIL", t);
+            }
+        });
+    }
+    private void loadAllNewsThenFilterBySentiment(final String sentiment) {
+        ApiService api = ApiClient.get().create(ApiService.class);
+        List<NewsItem> combined = new ArrayList<>();
+        api.getArticles().enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
+                if (r1.isSuccessful() && r1.body() != null) {
+                    combined.addAll(r1.body());
+                }
+                // sau khi lấy articles, tiếp tục lấy facebook_posts
+                api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>() {
+                    @Override
+                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
+                        if (r2.isSuccessful() && r2.body() != null) {
+                            combined.addAll(r2.body());
+                        }
+                        allNews = combined;
+                        // lọc theo sentiment sau khi đã có đủ dữ liệu
+                        filterNewsBySentiment(sentiment);
+                    }
+                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                        allNews = combined;
+                        filterNewsBySentiment(sentiment);
+                    }
+                });
+            }
+            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                Log.e("API", "FAIL", t);
+            }
+        });
+    }
+
     private void loadClusters() {
         ApiService api = ApiClient.get().create(ApiService.class);
         api.getTopClusters(20).enqueue(new Callback<List<ClusterItem>>() {
@@ -290,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(DetailActivity.K_DATE, it.getCrawled_at());
         startActivity(intent);
     }
-    
+
     private void openClusterDetail(ClusterItem cluster) {
         Intent intent = new Intent(this, ClusterDetailActivity.class);
         intent.putExtra("cluster_id", cluster.getCluster_id());
