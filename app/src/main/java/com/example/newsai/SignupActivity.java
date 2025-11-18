@@ -108,28 +108,27 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        // Show loading
         Toast.makeText(this, "Đang tạo tài khoản...", Toast.LENGTH_SHORT).show();
 
         mAuth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
                 FirebaseUser user = mAuth.getCurrentUser();
                 if (user != null) {
-                    // Update display name
+                    // cập nhật tên
                     user.updateProfile(new UserProfileChangeRequest.Builder()
                             .setDisplayName(name).build());
                     
-                    // Send verification email
+                    // fcm gửi mail
                     user.sendEmailVerification().addOnCompleteListener(emailTask -> {
                         if (emailTask.isSuccessful()) {
                             Toast.makeText(this, 
                                 "Đăng ký thành công!\nVui lòng kiểm tra email để xác thực tài khoản.", 
                                 Toast.LENGTH_LONG).show();
                             
-                            // Sign out user until they verify email
+                            // đăng xuất tài khoản nếu chưa xác minh
                             mAuth.signOut();
                             
-                            // Go back to login
+                            // quay lại trang đăng nhập
                             startActivity(new Intent(this, LoginActivity.class));
                             finish();
                         } else {

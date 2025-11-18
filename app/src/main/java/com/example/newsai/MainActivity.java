@@ -27,6 +27,7 @@ import com.example.newsai.network.ApiService;
 import com.example.newsai.ui.ClusterAdapter;
 import com.example.newsai.ui.NewsAdapter;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.text.SimpleDateFormat;
@@ -55,14 +56,13 @@ public class MainActivity extends AppCompatActivity {
     private final int limit = 20;
     private boolean isLoadingMore = false;
 
-    // Notification permission launcher
+    // Hiện thông báo xin quyền truy cập thông báo
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    Log.d("FCM", "Notification permission granted");
+
                     subscribeToNewsClusters();
                 } else {
-                    Log.d("FCM", "Notification permission denied");
                     Toast.makeText(this, "Bạn sẽ không nhận được thông báo cụm tin mới", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -90,6 +90,13 @@ public class MainActivity extends AppCompatActivity {
         ImageView btnAccount = findViewById(R.id.btnAccount);
         btnAccount.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
+
+        // FAB Xác minh tin tức
+        FloatingActionButton fabVerifyNews = findViewById(R.id.fabVerifyNews);
+        fabVerifyNews.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, VerifyNewsActivity.class);
             startActivity(intent);
         });
 
@@ -141,6 +148,13 @@ public class MainActivity extends AppCompatActivity {
             bottomSheet.dismiss();
         });
 
+        // Xác minh tin tức
+        view.findViewById(R.id.btnVerifyNews).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, VerifyNewsActivity.class);
+            startActivity(intent);
+            bottomSheet.dismiss();
+        });
+
         // Web
         view.findViewById(R.id.btnWeb).setOnClickListener(v -> {
             currentFilter = "web";
@@ -158,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
             tvTitle.setText("Facebook");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            loadNews();               // nạp lại dữ liệu
+            loadFaceBookposts();          // nạp lại dữ liệu
             bottomSheet.dismiss();
             filterNewsByType("facebook_post");
         });
@@ -185,7 +199,23 @@ public class MainActivity extends AppCompatActivity {
 
         bottomSheet.show();
     }
-
+    private void loadFaceBookposts() {
+        ApiService api = ApiClient.get().create(ApiService.class);
+        api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>()
+        {
+            @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res)
+            {
+                if (res.isSuccessful() && res.body() != null)
+                {
+                    allNews = res.body(); newsAdapter.submit(allNews);
+                }
+                else Log.e("API", "HTTP " + res.code());
+            } @Override public void onFailure(Call<List<NewsItem>> call, Throwable t)
+        {
+            Log.e("API", "FAIL", t);
+        }
+        });
+    }
     /** Reset phân trang và tải trang đầu tiên gồm articles + facebook_posts */
     private void loadNews() {
         currentSkip = 0;
@@ -320,9 +350,9 @@ public class MainActivity extends AppCompatActivity {
         FirebaseMessaging.getInstance().subscribeToTopic("news_clusters")
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Log.d("FCM", "Subscribed to news_clusters topic");
+                        Log.d("FCM", "Đăng ký thành công");
                     } else {
-                        Log.e("FCM", "Failed to subscribe to topic", task.getException());
+                        Log.e("FCM", "Check lại đi", task.getException());
                     }
                 });
     }

@@ -83,11 +83,11 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onCancel() {
-                    Toast.makeText(LoginActivity.this, "Facebook login canceled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Facebook login bị hủy", Toast.LENGTH_SHORT).show();
                 }
                 @Override
                 public void onError(FacebookException error) {
-                    Toast.makeText(LoginActivity.this, "Facebook login error", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Facebook login bị lỗi", Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -139,7 +139,7 @@ public class LoginActivity extends AppCompatActivity {
         String email = edtEmail.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
         
-        // Validate
+
         if (TextUtils.isEmpty(email)) {
             edtEmail.setError("Vui lòng nhập email");
             edtEmail.requestFocus();
@@ -151,8 +151,7 @@ public class LoginActivity extends AppCompatActivity {
             edtPassword.requestFocus();
             return;
         }
-        
-        // Show loading
+
         Toast.makeText(this, "Đang đăng nhập...", Toast.LENGTH_SHORT).show();
         
         // Đăng nhập Firebase
@@ -161,16 +160,16 @@ public class LoginActivity extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     FirebaseUser user = mAuth.getCurrentUser();
                     
-                    // Check if email is verified
+                    // Kiểm tra email
                     if (user != null && !user.isEmailVerified()) {
                         Toast.makeText(this, 
                             "Email chưa được xác thực!\nVui lòng kiểm tra email và xác thực tài khoản.", 
                             Toast.LENGTH_LONG).show();
                         
-                        // Optionally: Resend verification email
+                        // Gửi lại mail xác thực
                         showResendVerificationOption(user);
                         
-                        // Sign out user
+                        // Đăng xuất
                         mAuth.signOut();
                         return;
                     }
@@ -197,7 +196,7 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void showResendVerificationOption(FirebaseUser user) {
-        // Show dialog to ask if user wants to resend verification email
+
         new androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Email chưa xác thực")
             .setMessage("Bạn có muốn gửi lại email xác thực không?")

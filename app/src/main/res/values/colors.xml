@@ -8,4 +8,13 @@
     <color name="title_gray">#86868B</color>
     <color name="text_gray">#5A5A5A</color>
     <color name="blue_primary">#4F6EF7</color>
+    
+    <!-- Verify News Colors -->
+    <color name="result_true_bg">#F0FDF4</color>
+    <color name="result_true_border">#86EFAC</color>
+    <color name="result_true_text">#16A34A</color>
+    
+    <color name="result_false_bg">#FEF2F2</color>
+    <color name="result_false_border">#FCA5A5</color>
+    <color name="result_false_text">#DC2626</color>
 </resources>

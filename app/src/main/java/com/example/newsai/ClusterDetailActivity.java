@@ -53,7 +53,6 @@ public class ClusterDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // Load cluster data from API
         loadClusterDetail();
     }
     
@@ -62,9 +61,9 @@ public class ClusterDetailActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         
-        // Handle new cluster_id from notification
+        // mở cluster từ noti
         String newClusterId = intent.getStringExtra("cluster_id");
-        Log.d("ClusterDetail", "onNewIntent - Received cluster_id: " + newClusterId);
+
         
         if (newClusterId != null && !newClusterId.equals(clusterId)) {
             clusterId = newClusterId;
@@ -94,14 +93,13 @@ public class ClusterDetailActivity extends AppCompatActivity {
     }
 
     private void loadArticlesByIds(List<String> articleIds) {
-        Log.d("ClusterDetail", "Loading " + articleIds.size() + " articles by IDs");
         articlesContainer.removeAllViews();
         
         ApiService api = ApiClient.get().create(ApiService.class);
         
         for (int i = 0; i < articleIds.size(); i++) {
             String articleId = articleIds.get(i);
-            int rank = i; // Save rank for display
+            int rank = i;
             
             api.getArticleById(articleId).enqueue(new Callback<NewsItem>() {
                 @Override
@@ -128,13 +126,13 @@ public class ClusterDetailActivity extends AppCompatActivity {
         TextView tvSourceBadge = itemView.findViewById(R.id.tvSourceBadge);
         ImageView imgArticle = itemView.findViewById(R.id.imgArticle);
         
-        // Handle title
+        // xử lí hiển thị tiêu đề
         String title = article.getTitle();
         if (title != null && !title.isEmpty()) {
             tvArticleTitle.setText(title);
             tvArticleTitle.setVisibility(View.VISIBLE);
         } else {
-            // If no title, show text preview as title
+            // ko có tiêu đề thì lấy 1 đoạn text ngắn làm tiêu đề
             String text = article.getText_content();
             if (text != null && !text.isEmpty()) {
                 String preview = text.length() > 100 ? text.substring(0, 100) + "..." : text;
@@ -146,18 +144,18 @@ public class ClusterDetailActivity extends AppCompatActivity {
             }
         }
         
-        // Display article text/preview
+        // Hiển thị đoạn text báo ngắn
         String text = article.getText_content();
         if (text != null && !text.isEmpty() && title != null && !title.isEmpty()) {
             tvArticleText.setVisibility(View.VISIBLE);
-            // Limit text to ~150 characters for preview
+            // giới hạn 150 ký tự
             String preview = text.length() > 150 ? text.substring(0, 150) + "..." : text;
             tvArticleText.setText(preview);
         } else {
             tvArticleText.setVisibility(View.GONE);
         }
         
-        // Load image with default fallback
+        // load ảnh có sẵn
         List<String> images = article.getImage_contents();
         if (images != null && !images.isEmpty() && images.get(0) != null) {
             String imageUrl = images.get(0);
@@ -168,13 +166,13 @@ public class ClusterDetailActivity extends AppCompatActivity {
                     .centerCrop()
                     .into(imgArticle);
         } else {
-            // Set default image
+            // nếu không có ảnh thì hiển thị ảnh mặc định
             imgArticle.setImageResource(R.drawable.hotnews);
             imgArticle.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         }
         imgArticle.setVisibility(View.VISIBLE);
         
-        // Determine source badge
+        // Hiển thị nguồn 
         String type = article.getType();
         if (type != null && type.equals("facebook_post")) {
             tvSourceBadge.setText("📱 Facebook");
@@ -182,7 +180,7 @@ public class ClusterDetailActivity extends AppCompatActivity {
             tvSourceBadge.setText("🌐 Web");
         }
         
-        // Click to open DetailActivity
+        // Click vào thì mở detail
         itemView.setOnClickListener(v -> openArticleDetail(article));
         
         articlesContainer.addView(itemView);
@@ -191,7 +189,7 @@ public class ClusterDetailActivity extends AppCompatActivity {
     private void openArticleDetail(NewsItem article) {
         Intent intent = new Intent(this, DetailActivity.class);
         
-        // Use DetailActivity's constant keys
+        // lấy thông tin từng bài xong mở UI detail
         if (article.getTitle() != null) {
             intent.putExtra(DetailActivity.K_TITLE, article.getTitle());
         }
@@ -208,7 +206,7 @@ public class ClusterDetailActivity extends AppCompatActivity {
             intent.putExtra(DetailActivity.K_DATE, article.getCrawled_at());
         }
         
-        // Pass image if available
+        // push ảnh nếu có
         List<String> images = article.getImage_contents();
         if (images != null && !images.isEmpty() && images.get(0) != null) {
             intent.putExtra(DetailActivity.K_IMAGE, images.get(0));
@@ -227,18 +225,18 @@ public class ClusterDetailActivity extends AppCompatActivity {
         tvMeta.setText((cluster.getPrimary_source() != null ? cluster.getPrimary_source() : "") 
                 + " • " + cluster.getArticle_count() + " bài viết");
 
-        // Setup ViewPager2 with all images from cluster
+        // trượt ảnh nếu cụm có nhiều ảnh
         List<String> images = cluster.getImage_contents();
         if (images != null && !images.isEmpty()) {
             viewPager.setVisibility(View.VISIBLE);
             ImagePagerAdapter pagerAdapter = new ImagePagerAdapter(images);
             viewPager.setAdapter(pagerAdapter);
         } else {
-            // Hide ViewPager if no images
+            // 7ẩn
             viewPager.setVisibility(View.GONE);
         }
 
-        // Load articles using article_ids
+        // mở báo bằng article_id
         List<String> articleIds = cluster.getArticle_ids();
         if (articleIds != null && !articleIds.isEmpty()) {
             loadArticlesByIds(articleIds);

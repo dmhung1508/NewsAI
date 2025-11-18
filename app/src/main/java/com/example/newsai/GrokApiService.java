@@ -19,7 +19,7 @@ import okhttp3.Response;
 
 public class GrokApiService {
     private static final String TAG = "GrokApiService";
-    private static final String API_URL = "https://api.x.ai/v1/chat/completions";
+    private static final String API_URL = "https://dressed-things-dinner-republic.trycloudflare.com/v1/chat/completions";
     private static final String API_KEY = "";
     
     private final OkHttpClient client;
@@ -45,7 +45,7 @@ public class GrokApiService {
             try {
 
                 JSONObject requestBody = new JSONObject();
-                requestBody.put("model", "grok-4-fast-non-reasoning");
+                requestBody.put("model", "gpt-oss");
                 requestBody.put("temperature", 0.7);
                 requestBody.put("max_tokens", 1000);
                 

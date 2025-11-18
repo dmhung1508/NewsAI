@@ -12,5 +12,18 @@
     <string name="facebook_app_id">4073823199508107</string>
     <string name="fb_login_protocol_scheme">fb4073823199508107</string>
     <string name="facebook_client_token">5ad9da7855d33289fec2b5c14f5304c1</string>
+    
+    <!-- Verify News -->
+    <string name="verify_news_title">Xác minh tin tức</string>
+    <string name="verify_input_label">Nhập văn bản cần xác minh</string>
+    <string name="verify_input_hint">Dán hoặc nhập nội dung tin tức vào đây...</string>
+    <string name="verify_button">Xác minh</string>
+    <string name="verify_result_title">Kết quả xác minh</string>
+    <string name="verify_true_title">Tin tức chính xác</string>
+    <string name="verify_true_icon">Check icon</string>
+    <string name="verify_true_description">Thông tin trong văn bản đã được đối chiếu và xác nhận là đúng sự thật từ các nguồn tin cậy. Dữ liệu về kinh tế vĩ mô quý 3 khớp với báo cáo chính thức từ Tổng cục Thống kê.</string>
+    <string name="verify_false_title">Tin tức sai sự thật</string>
+    <string name="verify_false_icon">Cancel icon</string>
+    <string name="verify_false_description">Phân tích của chúng tôi cho thấy thông tin này có chứa các yếu tố không chính xác và có khả năng là tin giả. Công nghệ AI được đề cập chưa được cấp phép hoặc kiểm chứng bởi bất kỳ tổ chức y tế uy tín nào.</string>
 
 </resources>

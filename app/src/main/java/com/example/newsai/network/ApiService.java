@@ -23,7 +23,7 @@ public interface ApiService {
     Call<NewsItem> getArticleById(@Path("article_id") String articleId);
     
     // Cluster endpoints
-    @GET("clusters/top")
+    @GET("clusters/latest")
     Call<List<ClusterItem>> getTopClusters(@Query("n") int n);
     
     @GET("clusters/{cluster_id}")

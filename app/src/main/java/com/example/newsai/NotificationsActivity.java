@@ -40,8 +40,6 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void loadNotifications() {
-        // TODO: Load from local database or SharedPreferences
-        // For now, show empty state
         List<NotificationItem> notifications = new ArrayList<>();
         
         if (notifications.isEmpty()) {
@@ -56,11 +54,9 @@ public class NotificationsActivity extends AppCompatActivity {
 
     private void openClusterDetail(String clusterId) {
         Intent intent = new Intent(this, ClusterDetailActivity.class);
-        intent.putExtra("cluster_id", clusterId);
-        startActivity(intent);
+         startActivity(intent);
     }
 
-    // Simple notification item model
     public static class NotificationItem {
         public String id;
         public String title;

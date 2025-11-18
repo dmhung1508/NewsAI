@@ -35,7 +35,7 @@ public class ProfileActivity extends AppCompatActivity {
         editPhone = findViewById(R.id.editPhone);
         ImageView imageView = findViewById(R.id.imgAvatar);
         
-        // Kiểm tra nếu chưa đăng nhập thì quay về LoginActivity
+        // Kiểm tra nếu chưa đăng nhập thì quay về login
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
@@ -45,10 +45,9 @@ public class ProfileActivity extends AppCompatActivity {
         // Hiển thị thông tin user
         loadUserInfo();
         
-        // Nút cập nhật thông tin
+
         findViewById(R.id.btnUpdate).setOnClickListener(v -> updateUserInfo());
-        
-        // Nút đăng xuất
+
         findViewById(R.id.btnLogout).setOnClickListener(v -> showLogoutDialog());
         
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -93,7 +92,7 @@ public class ProfileActivity extends AppCompatActivity {
         String name = editName.getText().toString().trim();
         String phone = editPhone.getText().toString().trim();
         
-        // Validate
+        // Kiểm trs
         if (TextUtils.isEmpty(name)) {
             editName.setError("Vui lòng nhập tên");
             editName.requestFocus();

@@ -15,7 +15,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NewsAI">
+        android:theme="@style/Theme.NewsAI"
+        android:usesCleartextTraffic="true">
 
         <!-- Facebook SDK -->
         <meta-data
@@ -81,6 +82,7 @@
             android:exported="true"
             android:launchMode="singleTop"/>
         <activity android:name=".NotificationsActivity" android:exported="false"/>
+        <activity android:name=".VerifyNewsActivity" android:exported="true"/>
 
     </application>
 
