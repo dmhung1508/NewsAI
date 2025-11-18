@@ -22,8 +22,8 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
-import com.example.newsai.api.ApiClient;
-import com.example.newsai.api.NewsVerifyApiService;
+import com.example.newsai.network.ApiClient;
+import com.example.newsai.network.NewsVerifyApiService;
 import com.example.newsai.models.ExtractRequest;
 import com.example.newsai.models.ExtractResponse;
 import com.example.newsai.models.SearchRequest;

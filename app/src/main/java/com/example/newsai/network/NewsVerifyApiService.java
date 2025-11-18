@@ -1,4 +1,4 @@
-package com.example.newsai.api;
+package com.example.newsai.network;
 
 import com.example.newsai.models.ExtractRequest;
 import com.example.newsai.models.ExtractResponse;
@@ -35,3 +35,4 @@ public interface NewsVerifyApiService {
     @POST("verify")
     Call<VerifyResponse> verifyNews(@Body VerifyRequest request);
 }
+
