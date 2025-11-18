@@ -50,6 +50,31 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
         }
         h.title.setText(title);
 
+        // Description - hiển thị đoạn tóm tắt nội dung
+        String description = it.getDescription();
+        if (description == null || description.trim().isEmpty()) {
+            // Nếu không có description, dùng text_content
+            String tc = it.getText_content();
+            if (tc != null && !tc.trim().isEmpty()) {
+                // Lấy tối đa 180 ký tự làm mô tả
+                description = tc.length() > 180 ? tc.substring(0, 180) + "..." : tc;
+            } else {
+                description = "";
+            }
+        } else {
+            // Giới hạn độ dài description
+            if (description.length() > 180) {
+                description = description.substring(0, 180) + "...";
+            }
+        }
+        // Hiển thị description, ẩn view nếu rỗng
+        if (description.isEmpty()) {
+            h.description.setVisibility(View.GONE);
+        } else {
+            h.description.setVisibility(View.VISIBLE);
+            h.description.setText(description);
+        }
+
         // Image
         String img = (it.getImage_contents()!=null && !it.getImage_contents().isEmpty())
                 ? it.getImage_contents().get(0) : null;
@@ -78,11 +103,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
 
     public static class VH extends RecyclerView.ViewHolder {
         ImageView img, ivSentiment, ivSpam;
-        TextView title, chipSource, tvDate;
+        TextView title, description, chipSource, tvDate;
         VH(@NonNull View v) {
             super(v);
             img = v.findViewById(R.id.imgNews);
             title = v.findViewById(R.id.tvNewsTitle);
+            description = v.findViewById(R.id.tvNewsDescription);
             chipSource = v.findViewById(R.id.chipSource);
             tvDate = v.findViewById(R.id.tvDate);
             ivSentiment = v.findViewById(R.id.ivSentiment);

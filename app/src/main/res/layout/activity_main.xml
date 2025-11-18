@@ -47,6 +47,19 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btnBookmarks"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_bookmark"
+        android:background="@android:color/transparent"
+        android:scaleType="centerInside"
+        android:contentDescription="Bookmarks"
+        android:layout_marginTop="55dp"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnAccount" />
+
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"

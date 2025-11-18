@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:targetApi="s" />
 
     <application
         android:allowBackup="true"
@@ -77,12 +83,24 @@
         <activity android:name=".ProfileActivity" android:exported="true"/>
         <activity android:name=".DetailActivity" android:exported="true"/>
         <activity android:name=".ChatbotActivity" android:exported="true"/>
+        <activity android:name=".BookmarksActivity" android:exported="false"/>
         <activity 
             android:name=".ClusterDetailActivity" 
             android:exported="true"
             android:launchMode="singleTop"/>
         <activity android:name=".NotificationsActivity" android:exported="false"/>
         <activity android:name=".VerifyNewsActivity" android:exported="true"/>
+
+        <receiver
+            android:name=".stats.StatsAlarmReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".stats.StatsBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

@@ -8,18 +8,27 @@ import android.os.Bundle;
 import android.text.Layout;
 import android.text.TextUtils;
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.text.PrecomputedTextCompat;
 import androidx.core.widget.TextViewCompat;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.bumptech.glide.Glide;
+import com.example.newsai.data.BookmarkStorage;
 import com.example.newsai.data.NewsItem;
+import com.example.newsai.data.SavedArticle;
 import com.example.newsai.network.ApiClient;
 import com.example.newsai.network.ApiService;
+import com.example.newsai.tts.TextToSpeechManager;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -29,6 +38,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -53,12 +63,24 @@ public class DetailActivity extends AppCompatActivity {
     // Views
     private ImageView imgHeader, ivSentiment, ivSpam;
     private TextView tvCaption, tvTitle, tvLede, tvMeta, tvContent, tvSourceLink, btnShare, btnBookmark, badgeReadTime;
+    private FloatingActionButton fabChatbot;
+    private SavedArticle currentSavedArticle;
+    private FloatingActionButton fabTTS;
+    private ProgressBar progressTTS;
+    private LinearLayout contentContainer;
+    private TextToSpeechManager ttsManager;
+    private String currentTitle;
+    private String currentContent;
+    private boolean isAutoPlaying;
+    private int currentParagraphIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        ttsManager = new TextToSpeechManager(this);
+        setupTTSListener();
         bindViews();
 
         Intent it = getIntent();
@@ -80,10 +102,6 @@ public class DetailActivity extends AppCompatActivity {
                 it.getStringExtra(K_SENTIMENT),
                 it.getStringExtra(K_SPAM)
         );
-        findViewById(R.id.fabChatbot).setOnClickListener(v -> {
-            Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
-            startActivity(intent);
-        });
     }
 
     private void bindViews() {
@@ -99,6 +117,14 @@ public class DetailActivity extends AppCompatActivity {
         badgeReadTime = findViewById(R.id.badgeReadTime);
         ivSentiment   = findViewById(R.id.ivSentimentDetail);
         ivSpam        = findViewById(R.id.ivSpamDetail);
+        fabChatbot    = findViewById(R.id.fabChatbot);
+        fabTTS        = findViewById(R.id.fabTTS);
+        progressTTS   = findViewById(R.id.progressTTS);
+        // Get parent LinearLayout containing tvContent
+        android.view.ViewParent parent = tvContent.getParent();
+        if (parent instanceof LinearLayout) {
+            contentContainer = (LinearLayout) parent;
+        }
 
         // Justify: API29+ dùng LineBreaker, API26–28 dùng Layout
         if (Build.VERSION.SDK_INT >= 29) {
@@ -107,6 +133,9 @@ public class DetailActivity extends AppCompatActivity {
             tvContent.setJustificationMode(LineBreaker.JUSTIFICATION_MODE_INTER_WORD);
         }
 
+        if (fabTTS != null) {
+            fabTTS.setOnClickListener(v -> toggleTTSPlayback());
+        }
     }
 
     private void fetchArticleById(String articleId) {
@@ -155,24 +184,20 @@ public class DetailActivity extends AppCompatActivity {
         tvCaption.setText(domain(!TextUtils.isEmpty(sourceUrl) ? sourceUrl : url));
 
         // Title + lede
-        tvTitle.setText(safe(title));
-        tvLede.setText(makeLede(content));
+        String sanitizedTitle = sanitizeTitle(title);
+        tvTitle.setText(safe(sanitizedTitle));
+        String lede = makeLede(content);
+        tvLede.setText(lede);
 
         // Meta ngày (crawled_at)
         tvMeta.setText(safe(formatDate(crawledAt)));
 
-        // Nội dung đẹp + precomputed sau khi setText (đúng chữ ký)
-        String pretty = prettyContent(content);
-        tvContent.setText(pretty);
-        try {
-            PrecomputedTextCompat.Params params =
-                    new PrecomputedTextCompat.Params.Builder(tvContent.getPaint())
-                            .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
-                            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
-                            .build();
-            PrecomputedTextCompat p = PrecomputedTextCompat.create(tvContent.getText(), params);
-            TextViewCompat.setPrecomputedText(tvContent, p);
-        } catch (Exception ignore) {}
+        // Lưu title và content cho TTS
+        currentTitle = sanitizedTitle;
+        currentContent = content;
+        
+        // Hiển thị nội dung với các nút play cho từng đoạn
+        setupContentWithTTS(content);
 
         // Link nguồn
         tvSourceLink.setText(url != null ? url : "");
@@ -188,7 +213,7 @@ public class DetailActivity extends AppCompatActivity {
             share.putExtra(Intent.EXTRA_TEXT, (title == null ? "" : title) + "\n" + (url == null ? "" : url));
             startActivity(Intent.createChooser(share, "Chia sẻ bài viết"));
         });
-        btnBookmark.setOnClickListener(v -> Toast.makeText(this, "Đã lưu (demo)", Toast.LENGTH_SHORT).show());
+        btnBookmark.setOnClickListener(v -> toggleBookmark());
 
         // Icons
         if (ivSentiment != null) ivSentiment.setImageResource(mapSentiment(sentiment));
@@ -201,6 +226,21 @@ public class DetailActivity extends AppCompatActivity {
             String timeAgo = timeAgoVi(baseTime);
             badgeReadTime.setText(!TextUtils.isEmpty(timeAgo) ? timeAgo : "—");
         }
+
+        setupChatbotButton(sanitizedTitle, content, url);
+        currentSavedArticle = new SavedArticle(
+                url != null ? url : title,
+                sanitizedTitle,
+                image,
+                url,
+                sourceUrl,
+                content,
+                crawledAt,
+                postedAt,
+                sentiment,
+                spam
+        );
+        updateBookmarkState();
     }
 
     // ===== Helpers =====
@@ -219,6 +259,65 @@ public class DetailActivity extends AppCompatActivity {
         String c = content.trim();
         if (c.length() > 500) c = c.substring(0, 500) + "…";
         return c;
+    }
+
+    private void setupChatbotButton(String title, String content, String url) {
+        if (fabChatbot == null) return;
+        fabChatbot.setOnClickListener(v -> {
+            Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
+            String safeTitle = safe(title);
+            intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_TITLE, safeTitle);
+            intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_URL, url);
+            intent.putExtra(ChatbotActivity.EXTRA_HISTORY_KEY, buildHistoryKey(url, safeTitle));
+            startActivity(intent);
+        });
+    }
+
+    private void toggleBookmark() {
+        if (currentSavedArticle == null) {
+            Toast.makeText(this, "Không có dữ liệu bài viết để lưu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String key = getBookmarkKey();
+        if (TextUtils.isEmpty(key)) {
+            Toast.makeText(this, "Không thể lưu bài viết này", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean saved = BookmarkStorage.isBookmarked(this, key);
+        if (saved) {
+            BookmarkStorage.removeBookmark(this, key);
+            Toast.makeText(this, "Đã gỡ khỏi danh sách lưu", Toast.LENGTH_SHORT).show();
+        } else {
+            BookmarkStorage.addBookmark(this, currentSavedArticle);
+            Toast.makeText(this, "Đã lưu bài viết", Toast.LENGTH_SHORT).show();
+        }
+        updateBookmarkState();
+    }
+
+    private void updateBookmarkState() {
+        if (btnBookmark == null || currentSavedArticle == null) return;
+        String key = getBookmarkKey();
+        boolean saved = BookmarkStorage.isBookmarked(this, key);
+        btnBookmark.setText(saved ? "Đã lưu" : "Lưu");
+    }
+
+    private String getBookmarkKey() {
+        if (currentSavedArticle == null) return "";
+        if (!TextUtils.isEmpty(currentSavedArticle.getUrl())) return currentSavedArticle.getUrl();
+        if (!TextUtils.isEmpty(currentSavedArticle.getId())) return currentSavedArticle.getId();
+        return currentSavedArticle.getTitle();
+    }
+
+    private String sanitizeTitle(String title) {
+        if (TextUtils.isEmpty(title)) return "";
+        Pattern pattern = Pattern.compile("\\s*\\|\\s*nguồn.*$", Pattern.CASE_INSENSITIVE);
+        return pattern.matcher(title).replaceAll("").trim();
+    }
+
+    private String buildHistoryKey(String url, String title) {
+        String base = !TextUtils.isEmpty(url) ? url : title;
+        if (TextUtils.isEmpty(base)) return "history_default";
+        return "history_" + base.hashCode();
     }
 
     /** Làm sạch & tự chia đoạn mỗi ~3 câu nếu nguồn không có xuống dòng */
@@ -312,6 +411,144 @@ public class DetailActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             return iso.length() >= 10 ? iso.substring(0, 10) : "";
+        }
+    }
+
+    // ===== Text-to-Speech Methods =====
+    
+    private void setupTTSListener() {
+        ttsManager.setOnPlayStateChangeListener(new TextToSpeechManager.OnPlayStateChangeListener() {
+            @Override
+            public void onPlayStateChanged(boolean isPlaying, String text) {
+                updateTTSUI(isPlaying, ttsManager.isLoading());
+            }
+
+            @Override
+            public void onLoadingStateChanged(boolean isLoading, String text) {
+                updateTTSUI(ttsManager.isPlaying(), isLoading);
+            }
+
+            @Override
+            public void onPlaybackCompleted(String text) {
+                // Tự động chuyển sang đoạn tiếp theo nếu đang auto play
+                if (isAutoPlaying) {
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        playNextSegment();
+                    }, 300); // Delay 300ms giữa các đoạn
+                }
+            }
+
+            @Override
+            public void onError(String text, String error) {
+                updateTTSUI(false, false);
+                isAutoPlaying = false;
+            }
+        });
+    }
+
+    private void toggleTTSPlayback() {
+        if (ttsManager.isPlaying()) {
+            // Đang phát, dừng lại
+            ttsManager.stop();
+            updateTTSUI(false, false);
+            isAutoPlaying = false;
+            return;
+        }
+
+        // Bắt đầu đọc từ đầu
+        if (currentTitle == null || currentTitle.trim().isEmpty()) {
+            Toast.makeText(this, "Không có nội dung để đọc", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ttsManager.stop();
+        isAutoPlaying = true;
+        currentParagraphIndex = -1; // Bắt đầu từ tiêu đề (-1 = tiêu đề)
+        playNextSegment();
+    }
+
+    private void playNextSegment() {
+        if (!isAutoPlaying) return;
+
+        if (currentParagraphIndex == -1) {
+            // Đọc tiêu đề
+            if (currentTitle != null && !currentTitle.trim().isEmpty()) {
+                ttsManager.playText(currentTitle.trim(), 1);
+                currentParagraphIndex = 0;
+                return;
+            }
+            currentParagraphIndex = 0;
+        }
+
+        // Parse nội dung thành các đoạn
+        String pretty = prettyContent(currentContent);
+        String[] paragraphs = pretty.split("\\n\\n+");
+        
+        if (currentParagraphIndex < paragraphs.length) {
+            String para = paragraphs[currentParagraphIndex].trim();
+            if (!para.isEmpty()) {
+                ttsManager.playText(para, 1);
+                currentParagraphIndex++;
+                return;
+            }
+            currentParagraphIndex++;
+            playNextSegment(); // Bỏ qua đoạn trống
+        } else {
+            // Đã đọc hết
+            isAutoPlaying = false;
+            updateTTSUI(false, false);
+            Toast.makeText(this, "Đã đọc xong bài viết", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setupContentWithTTS(String content) {
+        if (tvContent == null) return;
+        
+        String pretty = prettyContent(content);
+        tvContent.setText(pretty);
+        tvContent.setVisibility(android.view.View.VISIBLE);
+        
+        try {
+            PrecomputedTextCompat.Params params =
+                    new PrecomputedTextCompat.Params.Builder(tvContent.getPaint())
+                            .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
+                            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
+                            .build();
+            PrecomputedTextCompat p = PrecomputedTextCompat.create(tvContent.getText(), params);
+            TextViewCompat.setPrecomputedText(tvContent, p);
+        } catch (Exception ignore) {}
+    }
+
+    private void updateTTSUI(boolean isPlaying, boolean isLoading) {
+        if (fabTTS == null) return;
+        
+        if (isLoading) {
+            // Hiển thị loading indicator
+            if (progressTTS != null) {
+                progressTTS.setVisibility(android.view.View.VISIBLE);
+            }
+            fabTTS.setVisibility(android.view.View.GONE);
+        } else {
+            // Ẩn loading indicator
+            if (progressTTS != null) {
+                progressTTS.setVisibility(android.view.View.GONE);
+            }
+            fabTTS.setVisibility(android.view.View.VISIBLE);
+            
+            // Cập nhật icon FAB: nếu đang phát thì icon pause, không thì icon loa
+            if (isPlaying) {
+                fabTTS.setImageResource(R.drawable.ic_pause);
+            } else {
+                fabTTS.setImageResource(R.drawable.ic_speaker);
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (ttsManager != null) {
+            ttsManager.release();
         }
     }
 }
