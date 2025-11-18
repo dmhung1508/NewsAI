@@ -18,7 +18,7 @@ public class ApiClient {
                     .build();
 
             instance = new Retrofit.Builder()
-                    .baseUrl("https://db.dinhmanhhung.net/")
+                    .baseUrl("http://43.228.212.108:8001/")
                     .addConverterFactory(MoshiConverterFactory.create())
                     .client(client)
                     .build();
