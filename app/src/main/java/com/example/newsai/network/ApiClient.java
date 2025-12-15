@@ -11,10 +11,10 @@ import retrofit2.converter.moshi.MoshiConverterFactory;
 public class ApiClient {
     // Main API instance (for news articles, clusters, etc.)
     private static Retrofit mainApiInstance;
-    
+
     // News Verify API instance (for search, extract, verify)
     private static Retrofit newsVerifyApiInstance;
-    
+
     // Base URLs
     private static final String MAIN_API_BASE_URL = "http://43.228.212.108:8001/";
     private static final String NEWS_VERIFY_API_BASE_URL = "https://db.dinhmanhhung.net/";
@@ -40,7 +40,7 @@ public class ApiClient {
         }
         return mainApiInstance;
     }
-    
+
     /**
      * Get News Verify API instance (for search, extract, verify)
      * Uses Gson converter with extended timeout
@@ -53,7 +53,7 @@ public class ApiClient {
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(30, TimeUnit.SECONDS)
                     .build();
-            
+
             newsVerifyApiInstance = new Retrofit.Builder()
                     .baseUrl(NEWS_VERIFY_API_BASE_URL)
                     .client(okHttpClient)

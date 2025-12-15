@@ -77,4 +77,3 @@ public class SearchRequest {
         this.safesearch = safesearch;
     }
 }
-

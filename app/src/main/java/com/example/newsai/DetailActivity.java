@@ -8,18 +8,33 @@ import android.os.Bundle;
 import android.text.Layout;
 import android.text.TextUtils;
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.text.PrecomputedTextCompat;
 import androidx.core.widget.TextViewCompat;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.bumptech.glide.Glide;
+import com.example.newsai.data.BookmarkStorage;
 import com.example.newsai.data.NewsItem;
+import com.example.newsai.data.SavedArticle;
 import com.example.newsai.network.ApiClient;
 import com.example.newsai.network.ApiService;
+import com.example.newsai.tts.TextToSpeechManager;
+import com.example.newsai.data.CommentRepository;
+import com.example.newsai.ui.CommentBottomSheet;
+import com.example.newsai.models.Comment;
+import com.bumptech.glide.Glide;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -28,7 +43,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -37,28 +54,56 @@ import retrofit2.Response;
 public class DetailActivity extends AppCompatActivity {
 
     // Keys
-    public static final String K_TITLE      = "k_title";
-    public static final String K_IMAGE      = "k_image";
-    public static final String K_URL        = "k_url";
+    public static final String K_TITLE = "k_title";
+    public static final String K_IMAGE = "k_image";
+    public static final String K_URL = "k_url";
     public static final String K_SOURCE_URL = "k_source_url";
-    public static final String K_CONTENT    = "k_content";
-    public static final String K_DATE       = "k_date";     // crawled_at
-    public static final String K_POSTED     = "k_posted";   // posted_at
-    public static final String K_SENTIMENT  = "k_sentiment";
-    public static final String K_SPAM       = "k_spam";
-    public static final String K_ID         = "article_id";
+    public static final String K_CONTENT = "k_content";
+    public static final String K_DATE = "k_date"; // crawled_at
+    public static final String K_POSTED = "k_posted"; // posted_at
+    public static final String K_SENTIMENT = "k_sentiment";
+    public static final String K_SPAM = "k_spam";
+    public static final String K_ID = "article_id";
 
     private static final String TAG = "DETAIL";
 
     // Views
     private ImageView imgHeader, ivSentiment, ivSpam;
     private TextView tvCaption, tvTitle, tvLede, tvMeta, tvContent, tvSourceLink, btnShare, btnBookmark, badgeReadTime;
+    private android.widget.FrameLayout btnChatbot;
+    private SavedArticle currentSavedArticle;
+    private android.widget.FrameLayout btnTTS;
+    private ProgressBar progressTTS;
+    private LinearLayout contentContainer;
+    private TextToSpeechManager ttsManager;
+    private String currentTitle;
+    private String currentContent;
+    private boolean isAutoPlaying;
+    private int currentParagraphIndex;
+
+    // Comment feature
+    private android.widget.FrameLayout btnComment;
+    private TextView tvCommentBadge;
+    private CommentRepository commentRepository;
+    private String currentArticleId;
+
+    // Inline comments
+    private LinearLayout commentsContainer;
+    private LinearLayout emptyCommentsState;
+    private EditText etInlineComment;
+    private ImageButton btnInlineSend;
+    private ShapeableImageView ivCommentAvatar;
+    private TextView tvInlineCommentCount;
+    private TextView tvLoadMoreComments;
+    private List<Comment> loadedComments = new java.util.ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        ttsManager = new TextToSpeechManager(this);
+        setupTTSListener();
         bindViews();
 
         Intent it = getIntent();
@@ -78,27 +123,30 @@ public class DetailActivity extends AppCompatActivity {
                 it.getStringExtra(K_DATE),
                 it.getStringExtra(K_POSTED),
                 it.getStringExtra(K_SENTIMENT),
-                it.getStringExtra(K_SPAM)
-        );
-        findViewById(R.id.fabChatbot).setOnClickListener(v -> {
-            Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
-            startActivity(intent);
-        });
+                it.getStringExtra(K_SPAM));
     }
 
     private void bindViews() {
-        imgHeader     = findViewById(R.id.imgHeader);
-        tvCaption     = findViewById(R.id.tvCaption);
-        tvTitle       = findViewById(R.id.tvTitle);
-        tvLede        = findViewById(R.id.tvLede);
-        tvMeta        = findViewById(R.id.tvMeta);
-        tvContent     = findViewById(R.id.tvContent);
-        tvSourceLink  = findViewById(R.id.tvSourceLink);
-        btnShare      = findViewById(R.id.btnShare);
-        btnBookmark   = findViewById(R.id.btnBookmark);
+        imgHeader = findViewById(R.id.imgHeader);
+        tvCaption = findViewById(R.id.tvCaption);
+        tvTitle = findViewById(R.id.tvTitle);
+        tvLede = findViewById(R.id.tvLede);
+        tvMeta = findViewById(R.id.tvMeta);
+        tvContent = findViewById(R.id.tvContent);
+        tvSourceLink = findViewById(R.id.tvSourceLink);
+        btnShare = findViewById(R.id.btnShare);
+        btnBookmark = findViewById(R.id.btnBookmark);
         badgeReadTime = findViewById(R.id.badgeReadTime);
-        ivSentiment   = findViewById(R.id.ivSentimentDetail);
-        ivSpam        = findViewById(R.id.ivSpamDetail);
+        ivSentiment = findViewById(R.id.ivSentimentDetail);
+        ivSpam = findViewById(R.id.ivSpamDetail);
+        btnChatbot = findViewById(R.id.btnChatbot);
+        btnTTS = findViewById(R.id.btnTTS);
+        progressTTS = findViewById(R.id.progressTTS);
+        // Get parent LinearLayout containing tvContent
+        android.view.ViewParent parent = tvContent.getParent();
+        if (parent instanceof LinearLayout) {
+            contentContainer = (LinearLayout) parent;
+        }
 
         // Justify: API29+ dùng LineBreaker, API26–28 dùng Layout
         if (Build.VERSION.SDK_INT >= 29) {
@@ -107,16 +155,47 @@ public class DetailActivity extends AppCompatActivity {
             tvContent.setJustificationMode(LineBreaker.JUSTIFICATION_MODE_INTER_WORD);
         }
 
+        if (btnTTS != null) {
+            btnTTS.setOnClickListener(v -> toggleTTSPlayback());
+        }
+
+        // Comment button (floating) - now scrolls to comments section
+        btnComment = findViewById(R.id.btnComment);
+        tvCommentBadge = findViewById(R.id.tvCommentBadge);
+        commentRepository = new CommentRepository();
+
+        if (btnComment != null) {
+            btnComment.setOnClickListener(v -> scrollToComments());
+        }
+
+        // Inline comments
+        commentsContainer = findViewById(R.id.commentsContainer);
+        emptyCommentsState = findViewById(R.id.emptyCommentsState);
+        etInlineComment = findViewById(R.id.etInlineComment);
+        btnInlineSend = findViewById(R.id.btnInlineSend);
+        ivCommentAvatar = findViewById(R.id.ivCommentAvatar);
+        tvInlineCommentCount = findViewById(R.id.tvInlineCommentCount);
+        tvLoadMoreComments = findViewById(R.id.tvLoadMoreComments);
+
+        // Setup send button
+        if (btnInlineSend != null) {
+            btnInlineSend.setOnClickListener(v -> sendInlineComment());
+        }
+
+        // Load user avatar
+        loadCommentUserAvatar();
     }
 
     private void fetchArticleById(String articleId) {
         ApiService api = ApiClient.get().create(ApiService.class);
         api.getArticleById(articleId).enqueue(new Callback<NewsItem>() {
-            @Override public void onResponse(Call<NewsItem> call, Response<NewsItem> res) {
+            @Override
+            public void onResponse(Call<NewsItem> call, Response<NewsItem> res) {
                 if (res.isSuccessful() && res.body() != null) {
                     NewsItem a = res.body();
                     String imgUrl = (a.getImage_contents() != null && !a.getImage_contents().isEmpty())
-                            ? a.getImage_contents().get(0) : null;
+                            ? a.getImage_contents().get(0)
+                            : null;
 
                     displayArticle(
                             a.getTitle(),
@@ -127,14 +206,15 @@ public class DetailActivity extends AppCompatActivity {
                             a.getCrawled_at(),
                             a.getPosted_at(),
                             a.getSentiment_label(),
-                            a.getSpam_label()
-                    );
+                            a.getSpam_label());
                 } else {
                     Toast.makeText(DetailActivity.this, "Không tìm thấy bài viết", Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }
-            @Override public void onFailure(Call<NewsItem> call, Throwable t) {
+
+            @Override
+            public void onFailure(Call<NewsItem> call, Throwable t) {
                 Log.e(TAG, "API FAIL", t);
                 Toast.makeText(DetailActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
                 finish();
@@ -143,8 +223,8 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void displayArticle(String title, String image, String url, String sourceUrl,
-                                String content, String crawledAt, String postedAt,
-                                String sentiment, String spam) {
+            String content, String crawledAt, String postedAt,
+            String sentiment, String spam) {
 
         // Header + caption
         Glide.with(imgHeader).load(image)
@@ -155,30 +235,32 @@ public class DetailActivity extends AppCompatActivity {
         tvCaption.setText(domain(!TextUtils.isEmpty(sourceUrl) ? sourceUrl : url));
 
         // Title + lede
-        tvTitle.setText(safe(title));
-        tvLede.setText(makeLede(content));
+        String sanitizedTitle = sanitizeTitle(title);
+        tvTitle.setText(safe(sanitizedTitle));
+        String lede = makeLede(content);
+        tvLede.setText(lede);
 
         // Meta ngày (crawled_at)
         tvMeta.setText(safe(formatDate(crawledAt)));
 
-        // Nội dung đẹp + precomputed sau khi setText (đúng chữ ký)
-        String pretty = prettyContent(content);
-        tvContent.setText(pretty);
-        try {
-            PrecomputedTextCompat.Params params =
-                    new PrecomputedTextCompat.Params.Builder(tvContent.getPaint())
-                            .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
-                            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
-                            .build();
-            PrecomputedTextCompat p = PrecomputedTextCompat.create(tvContent.getText(), params);
-            TextViewCompat.setPrecomputedText(tvContent, p);
-        } catch (Exception ignore) {}
+        // Lưu title và content cho TTS
+        currentTitle = sanitizedTitle;
+        currentContent = content;
+
+        // Hiển thị nội dung với các nút play cho từng đoạn
+        setupContentWithTTS(content);
 
         // Link nguồn
         tvSourceLink.setText(url != null ? url : "");
         tvSourceLink.setOnClickListener(v -> openUrl(url));
-        tvTitle.setOnClickListener(v -> { if (!TextUtils.isEmpty(url)) openUrl(url); });
-        imgHeader.setOnClickListener(v -> { if (!TextUtils.isEmpty(url)) openUrl(url); });
+        tvTitle.setOnClickListener(v -> {
+            if (!TextUtils.isEmpty(url))
+                openUrl(url);
+        });
+        imgHeader.setOnClickListener(v -> {
+            if (!TextUtils.isEmpty(url))
+                openUrl(url);
+        });
 
         // Share / Bookmark
         btnShare.setOnClickListener(v -> {
@@ -188,11 +270,13 @@ public class DetailActivity extends AppCompatActivity {
             share.putExtra(Intent.EXTRA_TEXT, (title == null ? "" : title) + "\n" + (url == null ? "" : url));
             startActivity(Intent.createChooser(share, "Chia sẻ bài viết"));
         });
-        btnBookmark.setOnClickListener(v -> Toast.makeText(this, "Đã lưu (demo)", Toast.LENGTH_SHORT).show());
+        btnBookmark.setOnClickListener(v -> toggleBookmark());
 
         // Icons
-        if (ivSentiment != null) ivSentiment.setImageResource(mapSentiment(sentiment));
-        if (ivSpam != null)      ivSpam.setImageResource(mapSpam(spam));
+        if (ivSentiment != null)
+            ivSentiment.setImageResource(mapSentiment(sentiment));
+        if (ivSpam != null)
+            ivSpam.setImageResource(mapSpam(spam));
 
         // Badge thời gian: now - posted_at (fallback crawled_at)
         String baseTime = !TextUtils.isEmpty(postedAt) ? postedAt : crawledAt;
@@ -201,6 +285,303 @@ public class DetailActivity extends AppCompatActivity {
             String timeAgo = timeAgoVi(baseTime);
             badgeReadTime.setText(!TextUtils.isEmpty(timeAgo) ? timeAgo : "—");
         }
+
+        setupChatbotButton(sanitizedTitle, content, url);
+        currentSavedArticle = new SavedArticle(
+                url != null ? url : title,
+                sanitizedTitle,
+                image,
+                url,
+                sourceUrl,
+                content,
+                crawledAt,
+                postedAt,
+                sentiment,
+                spam);
+        updateBookmarkState();
+
+        // Set article ID for comments (use URL hash as unique ID)
+        currentArticleId = String.valueOf((url != null ? url : title).hashCode());
+        loadCommentCount();
+        loadInlineComments();
+    }
+
+    // ===== Comment Methods =====
+    private void scrollToComments() {
+        if (commentsContainer != null) {
+            commentsContainer.getParent().requestChildFocus(commentsContainer, commentsContainer);
+        }
+    }
+
+    private void loadCommentUserAvatar() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
+                .getCurrentUser();
+        if (user != null && user.getPhotoUrl() != null && ivCommentAvatar != null) {
+            Glide.with(this)
+                    .load(user.getPhotoUrl())
+                    .placeholder(R.drawable.ic_avatar)
+                    .error(R.drawable.ic_avatar)
+                    .into(ivCommentAvatar);
+        }
+    }
+
+    private void loadCommentCount() {
+        if (commentRepository == null || currentArticleId == null)
+            return;
+
+        commentRepository.getCommentCount(currentArticleId, count -> {
+            runOnUiThread(() -> {
+                // Update badge
+                if (tvCommentBadge != null) {
+                    if (count > 0) {
+                        tvCommentBadge.setVisibility(android.view.View.VISIBLE);
+                        tvCommentBadge.setText(count > 99 ? "99+" : String.valueOf(count));
+                    } else {
+                        tvCommentBadge.setVisibility(android.view.View.GONE);
+                    }
+                }
+                // Update inline count
+                if (tvInlineCommentCount != null) {
+                    tvInlineCommentCount.setText(String.valueOf(count));
+                }
+            });
+        });
+    }
+
+    private void loadInlineComments() {
+        if (commentRepository == null || currentArticleId == null || commentsContainer == null)
+            return;
+
+        commentRepository.getComments(currentArticleId, new CommentRepository.OnCommentsLoadedListener() {
+            @Override
+            public void onSuccess(java.util.List<Comment> comments) {
+                runOnUiThread(() -> {
+                    loadedComments.clear();
+                    loadedComments.addAll(comments);
+                    displayInlineComments(comments);
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    if (emptyCommentsState != null) {
+                        emptyCommentsState.setVisibility(android.view.View.VISIBLE);
+                    }
+                });
+            }
+        });
+    }
+
+    private void displayInlineComments(java.util.List<Comment> comments) {
+        if (commentsContainer == null)
+            return;
+
+        commentsContainer.removeAllViews();
+
+        if (comments.isEmpty()) {
+            if (emptyCommentsState != null) {
+                emptyCommentsState.setVisibility(android.view.View.VISIBLE);
+            }
+            return;
+        }
+
+        if (emptyCommentsState != null) {
+            emptyCommentsState.setVisibility(android.view.View.GONE);
+        }
+
+        // Show max 5 comments initially
+        int maxShow = Math.min(comments.size(), 5);
+        for (int i = 0; i < maxShow; i++) {
+            Comment comment = comments.get(i);
+            android.view.View commentView = createCommentView(comment);
+            commentsContainer.addView(commentView);
+        }
+
+        // Show "Load more" if there are more comments
+        if (comments.size() > 5 && tvLoadMoreComments != null) {
+            tvLoadMoreComments.setVisibility(android.view.View.VISIBLE);
+            tvLoadMoreComments.setText("Xem thêm " + (comments.size() - 5) + " bình luận...");
+            tvLoadMoreComments.setOnClickListener(v -> showAllComments());
+        } else if (tvLoadMoreComments != null) {
+            tvLoadMoreComments.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private void showAllComments() {
+        if (commentsContainer == null)
+            return;
+
+        commentsContainer.removeAllViews();
+        for (Comment comment : loadedComments) {
+            android.view.View commentView = createCommentView(comment);
+            commentsContainer.addView(commentView);
+        }
+
+        if (tvLoadMoreComments != null) {
+            tvLoadMoreComments.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private android.view.View createCommentView(Comment comment) {
+        android.view.View view = getLayoutInflater().inflate(R.layout.item_comment, commentsContainer, false);
+
+        ShapeableImageView ivAvatar = view.findViewById(R.id.ivAvatar);
+        TextView tvUserName = view.findViewById(R.id.tvUserName);
+        TextView tvTime = view.findViewById(R.id.tvTime);
+        TextView tvContent = view.findViewById(R.id.tvContent);
+        TextView tvLikeCount = view.findViewById(R.id.tvLikeCount);
+        ImageView ivLike = view.findViewById(R.id.ivLike);
+        LinearLayout btnLike = view.findViewById(R.id.btnLike);
+        ImageButton btnMore = view.findViewById(R.id.btnMore);
+
+        // Set data
+        tvUserName.setText(comment.getUserName());
+        tvTime.setText(comment.getTimeAgo());
+        tvContent.setText(comment.getContent());
+        tvLikeCount.setText(String.valueOf(comment.getLikeCount()));
+
+        // Load avatar
+        if (comment.getUserAvatar() != null && !comment.getUserAvatar().isEmpty()) {
+            Glide.with(this)
+                    .load(comment.getUserAvatar())
+                    .placeholder(R.drawable.ic_avatar)
+                    .error(R.drawable.ic_avatar)
+                    .into(ivAvatar);
+        }
+
+        // Like state
+        com.google.firebase.auth.FirebaseUser currentUser = com.google.firebase.auth.FirebaseAuth.getInstance()
+                .getCurrentUser();
+        boolean isLiked = currentUser != null && comment.isLikedByUser(currentUser.getUid());
+        if (isLiked) {
+            ivLike.setImageResource(R.drawable.ic_like_filled);
+            ivLike.setColorFilter(getColor(R.color.result_false_text));
+        } else {
+            ivLike.setImageResource(R.drawable.ic_like_outline);
+            ivLike.setColorFilter(getColor(R.color.title_gray));
+        }
+
+        // Like click
+        btnLike.setOnClickListener(v -> {
+            if (currentUser == null) {
+                Toast.makeText(this, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            commentRepository.toggleLike(comment.getId(), new CommentRepository.OnCommentActionListener() {
+                @Override
+                public void onSuccess() {
+                    loadInlineComments();
+                    loadCommentCount();
+                }
+
+                @Override
+                public void onError(String error) {
+                    Toast.makeText(DetailActivity.this, error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        // Delete button (only show for comment owner)
+        if (currentUser != null && comment.getUserId().equals(currentUser.getUid())) {
+            btnMore.setVisibility(android.view.View.VISIBLE);
+            btnMore.setOnClickListener(v -> deleteComment(comment));
+        } else {
+            btnMore.setVisibility(android.view.View.GONE);
+        }
+
+        // Hide reply-related views for inline display
+        view.findViewById(R.id.btnReply).setVisibility(android.view.View.GONE);
+        view.findViewById(R.id.tvViewReplies).setVisibility(android.view.View.GONE);
+
+        return view;
+    }
+
+    private void sendInlineComment() {
+        if (etInlineComment == null)
+            return;
+
+        String content = etInlineComment.getText().toString().trim();
+        if (content.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập nội dung bình luận", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
+                .getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để bình luận", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (btnInlineSend != null)
+            btnInlineSend.setEnabled(false);
+
+        commentRepository.addComment(currentArticleId, content, new CommentRepository.OnCommentAddedListener() {
+            @Override
+            public void onSuccess(Comment comment) {
+                runOnUiThread(() -> {
+                    if (btnInlineSend != null)
+                        btnInlineSend.setEnabled(true);
+                    etInlineComment.setText("");
+
+                    // Hide keyboard
+                    android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(
+                            INPUT_METHOD_SERVICE);
+                    if (imm != null && etInlineComment != null) {
+                        imm.hideSoftInputFromWindow(etInlineComment.getWindowToken(), 0);
+                    }
+
+                    Toast.makeText(DetailActivity.this, "Đã đăng bình luận", Toast.LENGTH_SHORT).show();
+                    loadInlineComments();
+                    loadCommentCount();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    if (btnInlineSend != null)
+                        btnInlineSend.setEnabled(true);
+                    Toast.makeText(DetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void deleteComment(Comment comment) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Xóa bình luận")
+                .setMessage("Bạn có chắc muốn xóa bình luận này?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    commentRepository.deleteComment(comment.getId(), new CommentRepository.OnCommentActionListener() {
+                        @Override
+                        public void onSuccess() {
+                            runOnUiThread(() -> {
+                                Toast.makeText(DetailActivity.this, "Đã xóa bình luận", Toast.LENGTH_SHORT).show();
+                                loadInlineComments();
+                                loadCommentCount();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(DetailActivity.this, error, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reload comments when returning
+        loadCommentCount();
+        loadInlineComments();
     }
 
     // ===== Helpers =====
@@ -212,18 +593,89 @@ public class DetailActivity extends AppCompatActivity {
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u)));
     }
 
-    private String safe(String s) { return s == null ? "" : s; }
+    private String safe(String s) {
+        return s == null ? "" : s;
+    }
 
     private String makeLede(String content) {
-        if (content == null) return "";
+        if (content == null)
+            return "";
         String c = content.trim();
-        if (c.length() > 500) c = c.substring(0, 500) + "…";
+        if (c.length() > 500)
+            c = c.substring(0, 500) + "…";
         return c;
+    }
+
+    private void setupChatbotButton(String title, String content, String url) {
+        if (btnChatbot == null)
+            return;
+        btnChatbot.setOnClickListener(v -> {
+            Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
+            String safeTitle = safe(title);
+            intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_TITLE, safeTitle);
+            intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_URL, url);
+            intent.putExtra(ChatbotActivity.EXTRA_HISTORY_KEY, buildHistoryKey(url, safeTitle));
+            startActivity(intent);
+        });
+    }
+
+    private void toggleBookmark() {
+        if (currentSavedArticle == null) {
+            Toast.makeText(this, "Không có dữ liệu bài viết để lưu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String key = getBookmarkKey();
+        if (TextUtils.isEmpty(key)) {
+            Toast.makeText(this, "Không thể lưu bài viết này", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean saved = BookmarkStorage.isBookmarked(this, key);
+        if (saved) {
+            BookmarkStorage.removeBookmark(this, key);
+            Toast.makeText(this, "Đã gỡ khỏi danh sách lưu", Toast.LENGTH_SHORT).show();
+        } else {
+            BookmarkStorage.addBookmark(this, currentSavedArticle);
+            Toast.makeText(this, "Đã lưu bài viết", Toast.LENGTH_SHORT).show();
+        }
+        updateBookmarkState();
+    }
+
+    private void updateBookmarkState() {
+        if (btnBookmark == null || currentSavedArticle == null)
+            return;
+        String key = getBookmarkKey();
+        boolean saved = BookmarkStorage.isBookmarked(this, key);
+        btnBookmark.setText(saved ? "Đã lưu" : "Lưu");
+    }
+
+    private String getBookmarkKey() {
+        if (currentSavedArticle == null)
+            return "";
+        if (!TextUtils.isEmpty(currentSavedArticle.getUrl()))
+            return currentSavedArticle.getUrl();
+        if (!TextUtils.isEmpty(currentSavedArticle.getId()))
+            return currentSavedArticle.getId();
+        return currentSavedArticle.getTitle();
+    }
+
+    private String sanitizeTitle(String title) {
+        if (TextUtils.isEmpty(title))
+            return "";
+        Pattern pattern = Pattern.compile("\\s*\\|\\s*nguồn.*$", Pattern.CASE_INSENSITIVE);
+        return pattern.matcher(title).replaceAll("").trim();
+    }
+
+    private String buildHistoryKey(String url, String title) {
+        String base = !TextUtils.isEmpty(url) ? url : title;
+        if (TextUtils.isEmpty(base))
+            return "history_default";
+        return "history_" + base.hashCode();
     }
 
     /** Làm sạch & tự chia đoạn mỗi ~3 câu nếu nguồn không có xuống dòng */
     private String prettyContent(String raw) {
-        if (raw == null) return "";
+        if (raw == null)
+            return "";
         String text = raw.trim();
         if (text.contains("\n")) {
             return text.replaceAll("[ \\t\\x0B\\f\\r]+", " ")
@@ -234,57 +686,75 @@ public class DetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         int cnt = 0;
         for (String s : sentences) {
-            if (s.isEmpty()) continue;
-            if (sb.length() > 0) sb.append(' ');
+            if (s.isEmpty())
+                continue;
+            if (sb.length() > 0)
+                sb.append(' ');
             sb.append(s.trim());
             cnt++;
-            if (cnt >= 3) { sb.append("\n\n"); cnt = 0; }
+            if (cnt >= 3) {
+                sb.append("\n\n");
+                cnt = 0;
+            }
         }
         return sb.toString().trim();
     }
 
     private String formatDate(String d) {
-        if (d == null) return "";
+        if (d == null)
+            return "";
         return d.length() >= 10 ? d.substring(0, 10) : d;
     }
 
     private String domain(String u) {
         try {
-            if (u == null || u.isEmpty()) return "";
+            if (u == null || u.isEmpty())
+                return "";
             java.net.URI uri = new java.net.URI(u);
             String host = uri.getHost();
             return host != null ? host.replaceFirst("^www\\.", "") : "";
-        } catch (Exception e) { return ""; }
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private int mapSentiment(String label) {
-        if (label == null) return R.drawable.neutral;
+        if (label == null)
+            return R.drawable.neutral;
         String l = label.trim().toLowerCase(Locale.ROOT);
         switch (l) {
             case "tich cuc":
             case "tích cực":
-            case "positive": return R.drawable.positive;
+            case "positive":
+                return R.drawable.positive;
             case "tieu cuc":
             case "tiêu cực":
-            case "negative": return R.drawable.negative;
-            default: return R.drawable.neutral;
+            case "negative":
+                return R.drawable.negative;
+            default:
+                return R.drawable.neutral;
         }
     }
+
     private int mapSpam(String label) {
-        if (label == null) return R.drawable.nospam;
+        if (label == null)
+            return R.drawable.nospam;
         String l = label.trim().toLowerCase(Locale.ROOT);
         return l.equals("spam") ? R.drawable.spam : R.drawable.nospam; // "no_spam" -> nospam
     }
 
     /** Tính “X phút/giờ/ngày trước” từ ISO "yyyy-MM-dd'T'HH:mm:ss[.SSS...]" */
     private String timeAgoVi(String iso) {
-        if (TextUtils.isEmpty(iso)) return "";
+        if (TextUtils.isEmpty(iso))
+            return "";
         try {
             // Chuẩn hóa về yyyy-MM-dd'T'HH:mm:ss
             String base = iso;
             int dot = iso.indexOf('.');
-            if (dot > 0) base = iso.substring(0, dot);
-            if (base.length() > 19) base = base.substring(0, 19);
+            if (dot > 0)
+                base = iso.substring(0, dot);
+            if (base.length() > 19)
+                base = base.substring(0, 19);
 
             long seconds;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -298,20 +768,157 @@ public class DetailActivity extends AppCompatActivity {
                 seconds = (System.currentTimeMillis() - (then != null ? then.getTime() : 0L)) / 1000L;
             }
 
-            if (seconds < 60) return "vừa xong";
+            if (seconds < 60)
+                return "vừa xong";
             long minutes = seconds / 60;
-            if (minutes < 60) return minutes + " phút trước";
+            if (minutes < 60)
+                return minutes + " phút trước";
             long hours = minutes / 60;
-            if (hours < 24) return hours + " giờ trước";
+            if (hours < 24)
+                return hours + " giờ trước";
             long days = hours / 24;
-            if (days < 30) return days + " ngày trước";
+            if (days < 30)
+                return days + " ngày trước";
             long months = days / 30;
-            if (months < 12) return months + " tháng trước";
+            if (months < 12)
+                return months + " tháng trước";
             long years = months / 12;
             return years + " năm trước";
 
         } catch (Exception e) {
             return iso.length() >= 10 ? iso.substring(0, 10) : "";
+        }
+    }
+
+    // ===== Text-to-Speech Methods =====
+
+    private void setupTTSListener() {
+        ttsManager.setOnPlayStateChangeListener(new TextToSpeechManager.OnPlayStateChangeListener() {
+            @Override
+            public void onPlayStateChanged(boolean isPlaying, String text) {
+                updateTTSUI(isPlaying, ttsManager.isLoading());
+            }
+
+            @Override
+            public void onLoadingStateChanged(boolean isLoading, String text) {
+                updateTTSUI(ttsManager.isPlaying(), isLoading);
+            }
+
+            @Override
+            public void onPlaybackCompleted(String text) {
+                // Tự động chuyển sang đoạn tiếp theo nếu đang auto play
+                if (isAutoPlaying) {
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        playNextSegment();
+                    }, 300); // Delay 300ms giữa các đoạn
+                }
+            }
+
+            @Override
+            public void onError(String text, String error) {
+                updateTTSUI(false, false);
+                isAutoPlaying = false;
+            }
+        });
+    }
+
+    private void toggleTTSPlayback() {
+        if (ttsManager.isPlaying()) {
+            // Đang phát, dừng lại
+            ttsManager.stop();
+            updateTTSUI(false, false);
+            isAutoPlaying = false;
+            return;
+        }
+
+        // Bắt đầu đọc từ đầu
+        if (currentTitle == null || currentTitle.trim().isEmpty()) {
+            Toast.makeText(this, "Không có nội dung để đọc", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ttsManager.stop();
+        isAutoPlaying = true;
+        currentParagraphIndex = -1; // Bắt đầu từ tiêu đề (-1 = tiêu đề)
+        playNextSegment();
+    }
+
+    private void playNextSegment() {
+        if (!isAutoPlaying)
+            return;
+
+        if (currentParagraphIndex == -1) {
+            // Đọc tiêu đề
+            if (currentTitle != null && !currentTitle.trim().isEmpty()) {
+                ttsManager.playText(currentTitle.trim(), 1);
+                currentParagraphIndex = 0;
+                return;
+            }
+            currentParagraphIndex = 0;
+        }
+
+        // Parse nội dung thành các đoạn
+        String pretty = prettyContent(currentContent);
+        String[] paragraphs = pretty.split("\\n\\n+");
+
+        if (currentParagraphIndex < paragraphs.length) {
+            String para = paragraphs[currentParagraphIndex].trim();
+            if (!para.isEmpty()) {
+                ttsManager.playText(para, 1);
+                currentParagraphIndex++;
+                return;
+            }
+            currentParagraphIndex++;
+            playNextSegment(); // Bỏ qua đoạn trống
+        } else {
+            // Đã đọc hết
+            isAutoPlaying = false;
+            updateTTSUI(false, false);
+            Toast.makeText(this, "Đã đọc xong bài viết", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setupContentWithTTS(String content) {
+        if (tvContent == null)
+            return;
+
+        String pretty = prettyContent(content);
+        tvContent.setText(pretty);
+        tvContent.setVisibility(android.view.View.VISIBLE);
+
+        try {
+            PrecomputedTextCompat.Params params = new PrecomputedTextCompat.Params.Builder(tvContent.getPaint())
+                    .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
+                    .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
+                    .build();
+            PrecomputedTextCompat p = PrecomputedTextCompat.create(tvContent.getText(), params);
+            TextViewCompat.setPrecomputedText(tvContent, p);
+        } catch (Exception ignore) {
+        }
+    }
+
+    private void updateTTSUI(boolean isPlaying, boolean isLoading) {
+        if (btnTTS == null)
+            return;
+
+        if (isLoading) {
+            // Hiển thị loading indicator trong button
+            if (progressTTS != null) {
+                progressTTS.setVisibility(android.view.View.VISIBLE);
+            }
+        } else {
+            // Ẩn loading indicator
+            if (progressTTS != null) {
+                progressTTS.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (ttsManager != null) {
+            ttsManager.release();
         }
     }
 }

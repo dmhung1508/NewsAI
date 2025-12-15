@@ -26,4 +26,3 @@
             android:textSize="15sp" />
     </com.google.android.material.card.MaterialCardView>
 </LinearLayout>
-

@@ -13,26 +13,25 @@ import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
 public interface NewsVerifyApiService {
-    
+
     @Headers({
-        "accept: application/json",
-        "Content-Type: application/json"
+            "accept: application/json",
+            "Content-Type: application/json"
     })
     @POST("search")
     Call<SearchResponse> searchNews(@Body SearchRequest request);
-    
+
     @Headers({
-        "accept: application/json",
-        "Content-Type: application/json"
+            "accept: application/json",
+            "Content-Type: application/json"
     })
     @POST("extract")
     Call<ExtractResponse> extractContent(@Body ExtractRequest request);
-    
+
     @Headers({
-        "accept: application/json",
-        "Content-Type: application/json"
+            "accept: application/json",
+            "Content-Type: application/json"
     })
     @POST("verify")
     Call<VerifyResponse> verifyNews(@Body VerifyRequest request);
 }
-

@@ -2,12 +2,14 @@ package com.example.newsai;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,8 +21,8 @@ import okhttp3.Response;
 
 public class GrokApiService {
     private static final String TAG = "GrokApiService";
-    private static final String API_URL = "https://dressed-things-dinner-republic.trycloudflare.com/v1/chat/completions";
-    private static final String API_KEY = "";
+    private static final String API_URL = "https://api.yescale.io/v1/chat/completions";
+    private static final String API_KEY = "sk-mLcRIaOFbZF5yJjJpVKn3tsrt7BBp9r8m0Gxl8t1LLBJQTIe";
     
     private final OkHttpClient client;
     private final ExecutorService executorService;
@@ -40,12 +42,12 @@ public class GrokApiService {
         mainHandler = new Handler(Looper.getMainLooper());
     }
 
-    public void sendMessage(String userMessage, GrokCallback callback) {
+    public void sendConversation(List<ChatMessage> history, String articleTitle, String articleUrl, GrokCallback callback) {
         executorService.execute(() -> {
             try {
 
                 JSONObject requestBody = new JSONObject();
-                requestBody.put("model", "gpt-oss");
+                requestBody.put("model", "grok-3-mini-fast-beta");
                 requestBody.put("temperature", 0.7);
                 requestBody.put("max_tokens", 1000);
                 
@@ -54,14 +56,17 @@ public class GrokApiService {
 
                 JSONObject systemMsg = new JSONObject();
                 systemMsg.put("role", "system");
-                systemMsg.put("content", "Bạn là NewsBot, một trợ lý AI chuyên về tin tức và sự kiện thời sự. Hãy trả lời bằng tiếng Việt một cách thân thiện và chính xác.");
+                systemMsg.put("content", buildSystemPrompt(articleTitle, articleUrl));
                 messages.put(systemMsg);
                 
-
-                JSONObject userMsg = new JSONObject();
-                userMsg.put("role", "user");
-                userMsg.put("content", userMessage);
-                messages.put(userMsg);
+                if (history != null) {
+                    for (ChatMessage chatMessage : history) {
+                        JSONObject message = new JSONObject();
+                        message.put("role", chatMessage.isUser() ? "user" : "assistant");
+                        message.put("content", chatMessage.getContent());
+                        messages.put(message);
+                    }
+                }
                 
                 requestBody.put("messages", messages);
 
@@ -114,6 +119,20 @@ public class GrokApiService {
 
     public void shutdown() {
         executorService.shutdown();
+    }
+
+    private String buildSystemPrompt(String articleTitle, String articleUrl) {
+        StringBuilder sb = new StringBuilder("Bạn là NewsBot, một trợ lý AI chuyên về tin tức và sự kiện thời sự tại Việt Nam. Hãy trả lời bằng tiếng Việt tự nhiên, dễ hiểu và chính xác.");
+        if (!TextUtils.isEmpty(articleTitle)) {
+            sb.append(" Người dùng hiện đang trao đổi về bài viết \"").append(articleTitle).append("\"");
+            if (!TextUtils.isEmpty(articleUrl)) {
+                sb.append(" (").append(articleUrl).append(")");
+            }
+            sb.append(". Hãy ưu tiên sử dụng thông tin liên quan đến bài viết này, đồng thời linh hoạt theo các câu hỏi phát sinh.");
+        } else {
+            sb.append(" Nếu người dùng chưa cung cấp bài viết cụ thể, hãy hỏi thêm để hiểu ngữ cảnh trước khi phân tích sâu.");
+        }
+        return sb.toString();
     }
 }
 

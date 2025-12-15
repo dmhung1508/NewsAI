@@ -102,6 +102,36 @@
                     android:text="--"
                     android:textSize="12sp"
                     android:textColor="#999999" />
+
+                <!-- Comment Count -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+                
+                <LinearLayout
+                    android:id="@+id/commentCountContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:visibility="gone">
+                    
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_comment"
+                        app:tint="#999999" />
+                    
+                    <TextView
+                        android:id="@+id/tvCommentCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="0"
+                        android:textSize="12sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

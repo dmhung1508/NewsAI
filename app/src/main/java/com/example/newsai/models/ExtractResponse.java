@@ -85,4 +85,3 @@ public class ExtractResponse {
         this.error = error;
     }
 }
-

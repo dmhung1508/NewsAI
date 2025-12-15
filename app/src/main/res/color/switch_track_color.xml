@@ -3,4 +3,3 @@
     <item android:color="#4CAF50" android:state_checked="true"/>
     <item android:color="#BDBDBD" android:state_checked="false"/>
 </selector>
-

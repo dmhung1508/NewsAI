@@ -32,4 +32,3 @@ public class ExtractRequest {
         this.use_proxy = use_proxy;
     }
 }
-

@@ -1,19 +1,25 @@
 package com.example.newsai;
 
 import android.content.Context;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.text.HtmlCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_USER = 1;
     private static final int VIEW_TYPE_BOT = 2;
+    private static final Pattern H3_PATTERN = Pattern.compile("(?m)^###\\s*(.+)$");
+    private static final Pattern BOLD_PATTERN = Pattern.compile("\\*\\*(.+?)\\*\\*");
     private List<ChatMessage> messageList;
     private Context context;
     private OnSuggestionClickListener suggestionClickListener;
@@ -74,7 +80,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         void bind(ChatMessage message) {
-            tvMessage.setText(message.getContent());
+            tvMessage.setText(renderMarkdown(message.getContent()));
         }
     }
 
@@ -89,7 +95,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         void bind(ChatMessage message, OnSuggestionClickListener listener) {
-            tvMessage.setText(message.getContent());
+            tvMessage.setText(renderMarkdown(message.getContent()));
 
             if (message.hasSuggestions()) {
                 suggestionsLayout.setVisibility(View.VISIBLE);
@@ -105,8 +111,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
+                            LinearLayout.LayoutParams.WRAP_CONTENT);
                     params.setMargins(0, 8, 0, 8);
                     btnSuggestion.setLayoutParams(params);
 
@@ -123,5 +128,16 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
         }
     }
-}
 
+    private static Spanned renderMarkdown(String text) {
+        if (text == null)
+            return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY);
+        String html = text;
+        Matcher h3Matcher = H3_PATTERN.matcher(html);
+        html = h3Matcher.replaceAll("<h3>$1</h3>");
+        Matcher boldMatcher = BOLD_PATTERN.matcher(html);
+        html = boldMatcher.replaceAll("<b>$1</b>");
+        html = html.replace("\n", "<br/>");
+        return HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY);
+    }
+}
