@@ -49,6 +49,9 @@ dependencies {
     
     // Firebase Cloud Messaging for notifications
     implementation("com.google.firebase:firebase-messaging")
+    
+    // Firebase Firestore for comments
+    implementation("com.google.firebase:firebase-firestore")
 
     // Also add the dependencies for the Credential Manager libraries and specify their versions
     implementation("androidx.credentials:credentials:1.5.0")

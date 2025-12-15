@@ -20,6 +20,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.newsai.util.VipManager;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private ClusterAdapter clusterAdapter;
     private TextView tvTitle;
     private ImageButton ivMenu;
+    private ImageButton btnVipUpgrade;
     private boolean isClusterMode = false;
     private String currentFilter = "home"; // home, newest, web, facebook, positive, negative
     private List<NewsItem> allNews = new ArrayList<>();
@@ -71,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isEyeProtectionEnabled = false;
 
     // Hiện thông báo xin quyền truy cập thông báo
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
 
                     subscribeToNewsClusters();
@@ -106,11 +109,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
             startActivity(intent);
         });
-        ImageButton btnBookmarks = findViewById(R.id.btnBookmarks);
-        btnBookmarks.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, BookmarksActivity.class);
-            startActivity(intent);
+
+        // VIP Upgrade Button - hiển thị dựa trên trạng thái VIP
+        btnVipUpgrade = findViewById(R.id.btnVipUpgrade);
+        updateVipButton();
+        btnVipUpgrade.setOnClickListener(v -> {
+            VipManager.isVipActive(this, isVip -> {
+                runOnUiThread(() -> {
+                    if (isVip) {
+                        // Nếu đã VIP, hiển thị thông tin VIP
+                        showVipInfoDialog();
+                    } else {
+                        // Nếu chưa VIP, mở màn hình nâng cấp
+                        Intent intent = new Intent(MainActivity.this, VipAccountActivity.class);
+                        startActivity(intent);
+                    }
+                });
+            });
         });
+
         // FAB Xác minh tin tức
         FloatingActionButton fabVerifyNews = findViewById(R.id.fabVerifyNews);
         fabVerifyNews.setOnClickListener(v -> {
@@ -178,6 +195,55 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d("MainActivity", "Light sensor listener registered");
         }
+        // Update VIP button when returning to MainActivity
+        updateVipButton();
+    }
+
+    /**
+     * Update VIP button based on VIP status
+     */
+    private void updateVipButton() {
+        if (btnVipUpgrade != null) {
+            VipManager.isVipActive(this, isVip -> {
+                runOnUiThread(() -> {
+                    if (isVip) {
+                        // Đã VIP - hiển thị icon VIP với màu vàng
+                        btnVipUpgrade.setImageResource(R.drawable.ic_vip_crown);
+                        btnVipUpgrade.setColorFilter(getResources().getColor(android.R.color.holo_orange_light));
+                        btnVipUpgrade.setContentDescription("Tài khoản VIP");
+                    } else {
+                        // Chưa VIP - hiển thị icon crown với màu xám nhạt để khuyến khích nâng cấp
+                        btnVipUpgrade.setImageResource(R.drawable.ic_vip_crown);
+                        btnVipUpgrade.setColorFilter(getResources().getColor(android.R.color.darker_gray));
+                        btnVipUpgrade.setContentDescription("Nâng cấp VIP");
+                    }
+                });
+            });
+        }
+    }
+
+    /**
+     * Show VIP info dialog when user is already VIP
+     */
+    private void showVipInfoDialog() {
+        VipManager.getVipExpiryDate(this, expiryDate -> {
+            VipManager.getDaysRemaining(this, daysRemaining -> {
+                runOnUiThread(() -> {
+                    new androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("✨ Tài khoản VIP")
+                            .setMessage("Bạn đang là thành viên VIP!\n\n" +
+                                    "📅 Hết hạn: " + expiryDate + "\n" +
+                                    "⏰ Còn lại: " + daysRemaining + " ngày\n\n" +
+                                    "Cảm ơn bạn đã ủng hộ NewsAI! 💖")
+                            .setPositiveButton("OK", null)
+                            .setNeutralButton("Xem thêm", (dialog, which) -> {
+                                Intent intent = new Intent(this, ProfileActivity.class);
+                                startActivity(intent);
+                            })
+                            .show();
+                });
+            });
+        });
     }
 
     @Override
@@ -205,6 +271,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /**
      * Adjust screen brightness based on ambient light level
+     * 
      * @param lux Light level in lux
      */
     private void adjustBrightnessBasedOnLight(float lux) {
@@ -243,7 +310,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             layoutParams.screenBrightness = brightness;
             getWindow().setAttributes(layoutParams);
 
-            Log.d("MainActivity", String.format("Ambient light: %.1f lux, Brightness set to: %.0f%%", lux, brightness * 100));
+            Log.d("MainActivity",
+                    String.format("Ambient light: %.1f lux, Brightness set to: %.0f%%", lux, brightness * 100));
         } catch (Exception e) {
             Log.e("MainActivity", "Error adjusting brightness", e);
         }
@@ -275,6 +343,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             bottomSheet.dismiss();
         });
 
+        // Tin đã lưu
+        view.findViewById(R.id.btnBookmarks).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, BookmarksActivity.class);
+            startActivity(intent);
+            bottomSheet.dismiss();
+        });
+
         // Xác minh tin tức
         view.findViewById(R.id.btnVerifyNews).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, VerifyNewsActivity.class);
@@ -288,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             tvTitle.setText("Báo điện tử");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            loadNews();               // nạp lại dữ liệu
+            loadNews(); // nạp lại dữ liệu
             bottomSheet.dismiss();
             filterNewsByType("article");
         });
@@ -299,7 +374,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             tvTitle.setText("Facebook");
             isClusterMode = false;
             rvNews.setAdapter(newsAdapter);
-            loadFaceBookposts();          // nạp lại dữ liệu
+            loadFaceBookposts(); // nạp lại dữ liệu
             bottomSheet.dismiss();
             filterNewsByType("facebook_post");
         });
@@ -358,7 +433,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (isChecked) {
                 // Enable auto brightness
                 enableAutoBrightness();
-                Toast.makeText(this, "Đã bật điều chỉnh độ sáng tự động theo ánh sáng môi trường", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Đã bật điều chỉnh độ sáng tự động theo ánh sáng môi trường", Toast.LENGTH_SHORT)
+                        .show();
             } else {
                 // Disable auto brightness, restore default
                 disableAutoBrightness();
@@ -382,7 +458,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 layoutParams.screenBrightness = 0.5f; // 50% brightness
                 getWindow().setAttributes(layoutParams);
 
-                Toast.makeText(this, "Thiết bị không có cảm biến ánh sáng, sử dụng độ sáng 50%", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Thiết bị không có cảm biến ánh sáng, sử dụng độ sáng 50%", Toast.LENGTH_SHORT)
+                        .show();
                 Log.w("MainActivity", "Light sensor not available, using fixed 50% brightness");
             }
         } catch (Exception e) {
@@ -415,21 +492,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void loadFaceBookposts() {
         ApiService api = ApiClient.get().create(ApiService.class);
-        api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>()
-        {
-            @Override public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res)
-            {
-                if (res.isSuccessful() && res.body() != null)
-                {
-                    allNews = res.body(); newsAdapter.submit(allNews);
-                }
-                else Log.e("API", "HTTP " + res.code());
-            } @Override public void onFailure(Call<List<NewsItem>> call, Throwable t)
-        {
-            Log.e("API", "FAIL", t);
-        }
+        api.getFacebookPosts().enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    allNews = res.body();
+                    newsAdapter.submit(allNews);
+                } else
+                    Log.e("API", "HTTP " + res.code());
+            }
+
+            @Override
+            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                Log.e("API", "FAIL", t);
+            }
         });
     }
+
     /** Reset phân trang và tải trang đầu tiên gồm articles + facebook_posts */
     private void loadNews() {
         currentSkip = 0;
@@ -466,7 +545,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         isLoadingMore = false;
                     }
 
-                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                    @Override
+                    public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
                         currentSkip += limit;
                         allNews.addAll(newBatch);
                         if (newBatch.size() > 0) {
@@ -477,7 +557,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 });
             }
 
-            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+            @Override
+            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
                 // Không thành công, dừng trạng thái loading
                 isLoadingMore = false;
             }
@@ -534,14 +615,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         filterNewsBySentiment(sentiment);
                     }
 
-                    @Override public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                    @Override
+                    public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
                         allNews = combined;
                         filterNewsBySentiment(sentiment);
                     }
                 });
             }
 
-            @Override public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+            @Override
+            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
                 Log.e("API", "FAIL", t);
             }
         });
@@ -549,8 +632,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                 subscribeToNewsClusters();
             } else {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
@@ -574,11 +657,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void loadClusters() {
         ApiService api = ApiClient.get().create(ApiService.class);
         api.getTopClusters(20).enqueue(new Callback<List<ClusterItem>>() {
-            @Override public void onResponse(Call<List<ClusterItem>> call, Response<List<ClusterItem>> res) {
-                if (res.isSuccessful() && res.body() != null) clusterAdapter.submit(res.body());
-                else Log.e("API", "HTTP " + res.code());
+            @Override
+            public void onResponse(Call<List<ClusterItem>> call, Response<List<ClusterItem>> res) {
+                if (res.isSuccessful() && res.body() != null)
+                    clusterAdapter.submit(res.body());
+                else
+                    Log.e("API", "HTTP " + res.code());
             }
-            @Override public void onFailure(Call<List<ClusterItem>> call, Throwable t) {
+
+            @Override
+            public void onFailure(Call<List<ClusterItem>> call, Throwable t) {
                 Log.e("API", "FAIL", t);
             }
         });
@@ -587,7 +675,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void openDetail(NewsItem it) {
         Intent intent = new Intent(this, DetailActivity.class);
         String img = (it.getImage_contents() != null && !it.getImage_contents().isEmpty())
-                ? it.getImage_contents().get(0) : null;
+                ? it.getImage_contents().get(0)
+                : null;
         intent.putExtra(DetailActivity.K_TITLE, it.getTitle());
         intent.putExtra(DetailActivity.K_IMAGE, img);
         intent.putExtra(DetailActivity.K_URL, it.getUrl());

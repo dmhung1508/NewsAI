@@ -111,8 +111,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
+                            LinearLayout.LayoutParams.WRAP_CONTENT);
                     params.setMargins(0, 8, 0, 8);
                     btnSuggestion.setLayoutParams(params);
 
@@ -131,7 +130,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     private static Spanned renderMarkdown(String text) {
-        if (text == null) return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY);
+        if (text == null)
+            return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY);
         String html = text;
         Matcher h3Matcher = H3_PATTERN.matcher(html);
         html = h3Matcher.replaceAll("<h3>$1</h3>");
@@ -141,4 +141,3 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY);
     }
 }
-

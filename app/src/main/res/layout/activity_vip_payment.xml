@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F4EE"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:src="@drawable/ic_back"
+                app:tint="#1D1D1F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:text="Thanh Toán Nâng Cấp VIP"
+                android:textColor="#1D1D1F"
+                android:textSize="20sp" />
+        </RelativeLayout>
+
+        <!-- Timer -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/ibmplexsans_regular"
+            android:gravity="center"
+            android:text="Hoàn tất thanh toán trong thời gian quy định"
+            android:textColor="#5A5A5A"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <!-- Hours -->
+            <LinearLayout
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/timer_box_bg"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvHours"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:text="14"
+                    android:textColor="#1D1D1F"
+                    android:textSize="32sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/ibmplexsans_regular"
+                    android:text="Giờ"
+                    android:textColor="#5A5A5A"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:text=":"
+                android:textColor="#1D1D1F"
+                android:textSize="24sp" />
+
+            <!-- Minutes -->
+            <LinearLayout
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/timer_box_bg"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvMinutes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:text="59"
+                    android:textColor="#1D1D1F"
+                    android:textSize="32sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/ibmplexsans_regular"
+                    android:text="Phút"
+                    android:textColor="#5A5A5A"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:text=":"
+                android:textColor="#1D1D1F"
+                android:textSize="24sp" />
+
+            <!-- Seconds -->
+            <LinearLayout
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/timer_box_bg"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvSeconds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:text="59"
+                    android:textColor="#1D1D1F"
+                    android:textSize="32sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/ibmplexsans_regular"
+                    android:text="Giây"
+                    android:textColor="#5A5A5A"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- QR Code Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#2D4A4A"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp">
+
+                <!-- QR Code -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:fontFamily="@font/ibmplexsans_semibold"
+                            android:text="Ngân hàng"
+                            android:textColor="#1D1D1F"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:id="@+id/imgQrCode"
+                            android:layout_width="200dp"
+                            android:layout_height="200dp"
+                            android:contentDescription="QR Code"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_account" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:text="Quét để thanh toán"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/ibmplexsans_regular"
+                    android:gravity="center"
+                    android:text="Sử dụng ứng dụng ngân hàng\nđể quét mã này."
+                    android:textColor="#B0B0B0"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveQr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#4F6EF7"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:text="Lưu mã QR"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="24dp"
+                    app:icon="@drawable/ic_bookmark"
+                    app:iconTint="#FFFFFF" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Payment Details -->
+        <!-- Amount Due -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/payment_icon_bg" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibmplexsans_regular"
+                        android:text="Số tiền"
+                        android:textColor="#5A5A5A"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/ibmplexsans_semibold"
+                        android:text="20,000đ"
+                        android:textColor="#1D1D1F"
+                        android:textSize="18sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Bank Name -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/bank_icon_bg" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibmplexsans_regular"
+                        android:text="Tên ngân hàng"
+                        android:textColor="#5A5A5A"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvBankName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/ibmplexsans_semibold"
+                        android:text="MB Bank (Quân Đội)"
+                        android:textColor="#1D1D1F"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyBank"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:minWidth="0dp"
+                    android:text="Sao chép"
+                    android:textColor="#4F6EF7"
+                    app:icon="@drawable/ic_bookmark"
+                    app:iconSize="16dp"
+                    app:iconTint="#4F6EF7" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Account Holder -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/user_icon_bg" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibmplexsans_regular"
+                        android:text="Chủ tài khoản"
+                        android:textColor="#5A5A5A"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvAccountHolder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/ibmplexsans_semibold"
+                        android:text="DINH Manh Hung"
+                        android:textColor="#1D1D1F"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyHolder"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:minWidth="0dp"
+                    android:text="Sao chép"
+                    android:textColor="#4F6EF7"
+                    app:icon="@drawable/ic_bookmark"
+                    app:iconSize="16dp"
+                    app:iconTint="#4F6EF7" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Account Number -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/number_icon_bg" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/ibmplexsans_regular"
+                        android:text="Số tài khoản"
+                        android:textColor="#5A5A5A"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvAccountNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/ibmplexsans_semibold"
+                        android:text="669699669"
+                        android:textColor="#1D1D1F"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyAccount"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/ibmplexsans_semibold"
+                    android:minWidth="0dp"
+                    android:text="Sao chép"
+                    android:textColor="#4F6EF7"
+                    app:icon="@drawable/ic_bookmark"
+                    app:iconSize="16dp"
+                    app:iconTint="#4F6EF7" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- How to Pay -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/ibmplexsans_semibold"
+            android:text="Hướng dẫn thanh toán"
+            android:textColor="#1D1D1F"
+            android:textSize="18sp" />
+
+        <!-- Step 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/step_number_bg"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:fontFamily="@font/ibmplexsans_regular"
+                android:text="Mở ứng dụng ngân hàng và chọn 'Quét mã QR' hoặc 'Chuyển khoản'."
+                android:textColor="#5A5A5A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Step 2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/step_number_bg"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:gravity="center"
+                android:text="2"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:fontFamily="@font/ibmplexsans_regular"
+                android:text="Quét mã QR ở trên hoặc tải lên từ thư viện ảnh."
+                android:textColor="#5A5A5A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Step 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/step_number_bg"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:gravity="center"
+                android:text="3"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:fontFamily="@font/ibmplexsans_regular"
+                android:text="Xác nhận số tiền và thông tin người nhận trước khi hoàn tất thanh toán."
+                android:textColor="#5A5A5A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Secure Payment -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_check_circle"
+                app:tint="#16A34A" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ibmplexsans_semibold"
+                android:text="Thanh toán bảo mật"
+                android:textColor="#16A34A"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- I Have Paid Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIHavePaid"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#4F6EF7"
+            android:fontFamily="@font/ibmplexsans_semibold"
+            android:text="Tôi Đã Thanh Toán"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            app:cornerRadius="28dp" />
+
+        <!-- Support Link -->
+        <TextView
+            android:id="@+id/tvSupport"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ibmplexsans_regular"
+            android:gravity="center"
+            android:text="Gặp vấn đề? Liên hệ hỗ trợ"
+            android:textColor="#4F6EF7"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+</ScrollView>
+

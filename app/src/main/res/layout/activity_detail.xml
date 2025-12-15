@@ -18,7 +18,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="100dp">
 
             <ImageView
                 android:id="@+id/imgHeader"
@@ -158,45 +159,262 @@
                     android:textColor="@color/title_gray"
                     android:textSize="12sp"
                     android:visibility="gone"/>
+
+                <!-- ========== COMMENTS SECTION (Facebook Style) ========== -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:background="#E5E7EB" />
+
+                <!-- Comments Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_comment"
+                        app:tint="@color/title_black" />
+
+                    <TextView
+                        android:id="@+id/tvCommentsHeader"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Bình luận"
+                        android:textColor="@color/title_black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvInlineCommentCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/title_gray"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- Comment Input Box -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="16dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivCommentAvatar"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_avatar"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/CircleImageView" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        app:cardBackgroundColor="#F3F4F6"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="0dp">
+
+                        <EditText
+                            android:id="@+id/etInlineComment"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@null"
+                            android:hint="Viết bình luận..."
+                            android:textColorHint="@color/title_gray"
+                            android:textColor="@color/title_black"
+                            android:textSize="14sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp"
+                            android:maxLines="4"
+                            android:inputType="textMultiLine|textCapSentences" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <ImageButton
+                        android:id="@+id/btnInlineSend"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/button_send_chat"
+                        android:src="@drawable/ic_send"
+                        android:scaleType="centerInside"
+                        android:padding="10dp"
+                        app:tint="@android:color/white"
+                        android:contentDescription="Gửi bình luận" />
+                </LinearLayout>
+
+                <!-- Comments List Container -->
+                <LinearLayout
+                    android:id="@+id/commentsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- Load More Button -->
+                <TextView
+                    android:id="@+id/tvLoadMoreComments"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="24dp"
+                    android:text="Xem thêm bình luận..."
+                    android:textColor="@color/blue_primary"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:visibility="gone" />
+
+                <!-- Empty Comments State -->
+                <LinearLayout
+                    android:id="@+id/emptyCommentsState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingTop="24dp"
+                    android:paddingBottom="40dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_comment"
+                        app:tint="#D1D5DB" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Chưa có bình luận nào"
+                        android:textColor="@color/title_gray"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Hãy là người đầu tiên bình luận!"
+                        android:textColor="@color/text_gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabChatbot"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="88dp"
-        android:contentDescription="Chatbot"
-        android:src="@android:drawable/ic_dialog_email"
-        app:backgroundTint="#4F6EF7"
+    <!-- Fade Overlay đè lên text -->
+    <View
+        android:id="@+id/fadeOverlay"
+        android:layout_width="0dp"
+        android:layout_height="120dp"
+        android:background="@drawable/bottom_fade_overlay"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabTTS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="20dp"
-        android:contentDescription="Đọc bài viết"
-        android:src="@drawable/ic_speaker"
-        app:backgroundTint="#10B981"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white" />
-
-    <ProgressBar
-        android:id="@+id/progressTTS"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="20dp"
-        android:indeterminateTint="#10B981"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottom Action Bar - Compact Floating Style -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/pill_button_bg"
+        android:elevation="12dp"
+        android:padding="4dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- AI Đọc Báo Button -->
+        <FrameLayout
+            android:id="@+id/btnTTS"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/pill_item_bg"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_speaker"
+                app:tint="@android:color/white" />
+
+            <ProgressBar
+                android:id="@+id/progressTTS"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="@android:color/white"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- Comment Button -->
+        <FrameLayout
+            android:id="@+id/btnComment"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/pill_item_bg"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_comment"
+                app:tint="@android:color/white" />
+
+            <!-- Comment count badge -->
+            <TextView
+                android:id="@+id/tvCommentBadge"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/badge_bg"
+                android:gravity="center"
+                android:text="0"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- Chat AI Button -->
+        <FrameLayout
+            android:id="@+id/btnChatbot"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/pill_item_bg_blue"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_dialog_email"
+                app:tint="@android:color/white" />
+        </FrameLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

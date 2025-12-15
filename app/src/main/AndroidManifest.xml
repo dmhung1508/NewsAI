@@ -12,6 +12,8 @@
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:targetApi="s" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:allowBackup="true"
@@ -90,6 +92,8 @@
             android:launchMode="singleTop"/>
         <activity android:name=".NotificationsActivity" android:exported="false"/>
         <activity android:name=".VerifyNewsActivity" android:exported="true"/>
+        <activity android:name=".VipAccountActivity" android:exported="false"/>
+        <activity android:name=".VipPaymentActivity" android:exported="false"/>
 
         <receiver
             android:name=".stats.StatsAlarmReceiver"
