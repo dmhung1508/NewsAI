@@ -6,7 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.moshi.MoshiConverterFactory;
 
 public class StatsApiClient {
-    private static final String BASE_URL = "https://db.dinhmanhhung.nets";
+    private static final String BASE_URL = "http://43.228.212.108:8001/";
     private static StatsApiService instance;
 
     public static StatsApiService get() {

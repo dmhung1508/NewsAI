@@ -107,7 +107,17 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
         h.ivSpam.setImageResource(mapSpam(it.getSpam_label()));
 
         // Load comment count
-        String articleId = String.valueOf((it.getUrl() != null ? it.getUrl() : it.getTitle()).hashCode());
+        String idSource = it.getUrl();
+        if (idSource == null || idSource.isEmpty())
+            idSource = it.getTitle();
+        if (idSource == null || idSource.isEmpty())
+            idSource = it.get_id();
+        if (idSource == null || idSource.isEmpty())
+            idSource = it.getText_content();
+        if (idSource == null || idSource.isEmpty())
+            idSource = "unknown_" + p; // Fallback using position
+
+        String articleId = String.valueOf(idSource.hashCode());
         loadCommentCount(articleId, h);
 
         // Click

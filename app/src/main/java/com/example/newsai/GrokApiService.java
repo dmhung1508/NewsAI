@@ -23,13 +23,14 @@ public class GrokApiService {
     private static final String TAG = "GrokApiService";
     private static final String API_URL = "https://api.yescale.io/v1/chat/completions";
     private static final String API_KEY = "sk-mLcRIaOFbZF5yJjJpVKn3tsrt7BBp9r8m0Gxl8t1LLBJQTIe";
-    
+
     private final OkHttpClient client;
     private final ExecutorService executorService;
     private final Handler mainHandler;
 
     public interface GrokCallback {
         void onSuccess(String response);
+
         void onError(String error);
     }
 
@@ -42,7 +43,8 @@ public class GrokApiService {
         mainHandler = new Handler(Looper.getMainLooper());
     }
 
-    public void sendConversation(List<ChatMessage> history, String articleTitle, String articleUrl, GrokCallback callback) {
+    public void sendConversation(List<ChatMessage> history, String articleTitle, String articleUrl,
+            GrokCallback callback) {
         executorService.execute(() -> {
             try {
 
@@ -50,15 +52,14 @@ public class GrokApiService {
                 requestBody.put("model", "grok-3-mini-fast-beta");
                 requestBody.put("temperature", 0.7);
                 requestBody.put("max_tokens", 1000);
-                
+
                 JSONArray messages = new JSONArray();
-                
 
                 JSONObject systemMsg = new JSONObject();
                 systemMsg.put("role", "system");
                 systemMsg.put("content", buildSystemPrompt(articleTitle, articleUrl));
                 messages.put(systemMsg);
-                
+
                 if (history != null) {
                     for (ChatMessage chatMessage : history) {
                         JSONObject message = new JSONObject();
@@ -67,35 +68,33 @@ public class GrokApiService {
                         messages.put(message);
                     }
                 }
-                
+
                 requestBody.put("messages", messages);
 
                 RequestBody body = RequestBody.create(
-                    requestBody.toString(),
-                    MediaType.parse("application/json; charset=utf-8")
-                );
-                
+                        requestBody.toString(),
+                        MediaType.parse("application/json; charset=utf-8"));
+
                 Request request = new Request.Builder()
                         .url(API_URL)
                         .addHeader("Authorization", "Bearer " + API_KEY)
                         .addHeader("Content-Type", "application/json")
                         .post(body)
                         .build();
-                
 
                 Response response = client.newCall(request).execute();
-                
+
                 if (response.isSuccessful() && response.body() != null) {
                     String responseBody = response.body().string();
                     Log.d(TAG, "Response: " + responseBody);
-                    
+
                     JSONObject jsonResponse = new JSONObject(responseBody);
                     JSONArray choices = jsonResponse.getJSONArray("choices");
                     if (choices.length() > 0) {
                         JSONObject firstChoice = choices.getJSONObject(0);
                         JSONObject message = firstChoice.getJSONObject("message");
                         String content = message.getString("content");
-                        
+
                         // Callback trên main thread
                         mainHandler.post(() -> callback.onSuccess(content));
                     } else {
@@ -106,7 +105,7 @@ public class GrokApiService {
                     Log.e(TAG, "API Error: " + response.code() + " - " + errorBody);
                     mainHandler.post(() -> callback.onError("Lỗi API: " + response.code()));
                 }
-                
+
             } catch (IOException e) {
                 Log.e(TAG, "Network error", e);
                 mainHandler.post(() -> callback.onError("Lỗi kết nối: " + e.getMessage()));
@@ -122,17 +121,19 @@ public class GrokApiService {
     }
 
     private String buildSystemPrompt(String articleTitle, String articleUrl) {
-        StringBuilder sb = new StringBuilder("Bạn là NewsBot, một trợ lý AI chuyên về tin tức và sự kiện thời sự tại Việt Nam. Hãy trả lời bằng tiếng Việt tự nhiên, dễ hiểu và chính xác.");
+        StringBuilder sb = new StringBuilder(
+                "Bạn là NewsBot, một trợ lý AI chuyên về tin tức và sự kiện thời sự tại Việt Nam. Hãy trả lời bằng tiếng Việt tự nhiên, dễ hiểu và chính xác.");
         if (!TextUtils.isEmpty(articleTitle)) {
             sb.append(" Người dùng hiện đang trao đổi về bài viết \"").append(articleTitle).append("\"");
             if (!TextUtils.isEmpty(articleUrl)) {
                 sb.append(" (").append(articleUrl).append(")");
             }
-            sb.append(". Hãy ưu tiên sử dụng thông tin liên quan đến bài viết này, đồng thời linh hoạt theo các câu hỏi phát sinh.");
+            sb.append(
+                    ". Hãy ưu tiên sử dụng thông tin liên quan đến bài viết này. Tuy nhiên, nếu câu hỏi của người dùng không liên quan đến bài viết hoặc bài viết không cung cấp đủ thông tin, hãy sử dụng kiến thức rộng của bạn (như một công cụ tìm kiếm) để trả lời chi tiết và chính xác. QUAN TRỌNG: Khi sử dụng thông tin bên ngoài, hãy trích dẫn nguồn rõ ràng dưới dạng link Markdown [Tên nguồn](URL) (ví dụ: [Wikipedia](https://vi.wikipedia.org)...).");
         } else {
-            sb.append(" Nếu người dùng chưa cung cấp bài viết cụ thể, hãy hỏi thêm để hiểu ngữ cảnh trước khi phân tích sâu.");
+            sb.append(
+                    " Nếu người dùng chưa cung cấp bài viết cụ thể, hãy hỏi thêm để hiểu ngữ cảnh. Nếu câu hỏi mang tính tổng quát, hãy trả lời dựa trên kiến thức của bạn và trích dẫn nguồn nếu cần thiết.");
         }
         return sb.toString();
     }
 }
-

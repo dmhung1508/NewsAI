@@ -78,6 +78,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextToSpeechManager ttsManager;
     private String currentTitle;
     private String currentContent;
+    private String currentUrl;
     private boolean isAutoPlaying;
     private int currentParagraphIndex;
 
@@ -96,6 +97,11 @@ public class DetailActivity extends AppCompatActivity {
     private TextView tvInlineCommentCount;
     private TextView tvLoadMoreComments;
     private List<Comment> loadedComments = new java.util.ArrayList<>();
+
+    // FAB Menu
+    private FloatingActionButton fabMain;
+    private LinearLayout menuContainer;
+    private boolean isMenuExpanded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,17 +161,25 @@ public class DetailActivity extends AppCompatActivity {
             tvContent.setJustificationMode(LineBreaker.JUSTIFICATION_MODE_INTER_WORD);
         }
 
+        // TTS Button
+        btnTTS = findViewById(R.id.btnTTS);
         if (btnTTS != null) {
-            btnTTS.setOnClickListener(v -> toggleTTSPlayback());
+            btnTTS.setOnClickListener(v -> {
+                toggleMenu(); // Auto-collapse
+                toggleTTSPlayback();
+            });
         }
 
-        // Comment button (floating) - now scrolls to comments section
+        // Comment Button
         btnComment = findViewById(R.id.btnComment);
         tvCommentBadge = findViewById(R.id.tvCommentBadge);
         commentRepository = new CommentRepository();
 
         if (btnComment != null) {
-            btnComment.setOnClickListener(v -> scrollToComments());
+            btnComment.setOnClickListener(v -> {
+                toggleMenu(); // Auto-collapse
+                scrollToComments();
+            });
         }
 
         // Inline comments
@@ -183,7 +197,19 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         // Load user avatar
+        // Load user avatar
         loadCommentUserAvatar();
+
+        // FAB Menu Setup
+        fabMain = findViewById(R.id.fabMain);
+        menuContainer = findViewById(R.id.menuContainer);
+
+        if (fabMain != null) {
+            fabMain.setAlpha(0.3f); // Lower alpha for inactive state
+            fabMain.setImageResource(R.drawable.ic_white_circle); // White circle icon
+            fabMain.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF555555)); // Grey
+            fabMain.setOnClickListener(v -> toggleMenu());
+        }
     }
 
     private void fetchArticleById(String articleId) {
@@ -243,9 +269,10 @@ public class DetailActivity extends AppCompatActivity {
         // Meta ngày (crawled_at)
         tvMeta.setText(safe(formatDate(crawledAt)));
 
-        // Lưu title và content cho TTS
+        // Store for TTS and Chatbot
         currentTitle = sanitizedTitle;
         currentContent = content;
+        currentUrl = url;
 
         // Hiển thị nội dung với các nút play cho từng đoạn
         setupContentWithTTS(content);
@@ -273,10 +300,14 @@ public class DetailActivity extends AppCompatActivity {
         btnBookmark.setOnClickListener(v -> toggleBookmark());
 
         // Icons
-        if (ivSentiment != null)
+        if (ivSentiment != null) {
             ivSentiment.setImageResource(mapSentiment(sentiment));
-        if (ivSpam != null)
+            ivSentiment.setOnClickListener(v -> showTooltip(v, getSentimentText(sentiment), -50));
+        }
+        if (ivSpam != null) {
             ivSpam.setImageResource(mapSpam(spam));
+            ivSpam.setOnClickListener(v -> showTooltip(v, getSpamText(spam), 0));
+        }
 
         // Badge thời gian: now - posted_at (fallback crawled_at)
         String baseTime = !TextUtils.isEmpty(postedAt) ? postedAt : crawledAt;
@@ -301,7 +332,15 @@ public class DetailActivity extends AppCompatActivity {
         updateBookmarkState();
 
         // Set article ID for comments (use URL hash as unique ID)
-        currentArticleId = String.valueOf((url != null ? url : title).hashCode());
+        String idSource = url;
+        if (TextUtils.isEmpty(idSource))
+            idSource = title;
+        if (TextUtils.isEmpty(idSource))
+            idSource = content;
+        if (TextUtils.isEmpty(idSource))
+            idSource = "unknown_" + System.currentTimeMillis();
+
+        currentArticleId = String.valueOf(idSource.hashCode());
         loadCommentCount();
         loadInlineComments();
     }
@@ -790,6 +829,105 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+    private void toggleMenu() {
+        if (isMenuExpanded) {
+            // Collapse
+            menuContainer.setVisibility(android.view.View.GONE);
+
+            fabMain.setImageResource(R.drawable.ic_white_circle); // White circle icon
+            fabMain.animate().alpha(0.3f).setDuration(200).start();
+            fabMain.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF555555)); // Grey
+
+            isMenuExpanded = false;
+        } else {
+            // Expand
+            menuContainer.setVisibility(android.view.View.VISIBLE);
+
+            fabMain.setImageResource(R.drawable.ic_clear);
+            fabMain.animate().alpha(1.0f).setDuration(200).start();
+            fabMain.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4F6EF7)); // Blue
+
+            // Simple animation
+            menuContainer.setAlpha(0f);
+            menuContainer.setTranslationX(50f);
+            menuContainer.animate()
+                    .alpha(1f)
+                    .translationX(0f)
+                    .setDuration(200)
+                    .start();
+
+            isMenuExpanded = true;
+        }
+    }
+
+    private void showCommentDialog() {
+        if (currentArticleId == null)
+            return;
+        CommentBottomSheet fragment = CommentBottomSheet.newInstance(currentArticleId);
+        fragment.show(getSupportFragmentManager(), "CommentBottomSheet");
+    }
+
+    private void showChatbotDialog() {
+        if (currentUrl == null || currentTitle == null) {
+            Toast.makeText(this, "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(DetailActivity.this, ChatbotActivity.class);
+        String safeTitle = safe(currentTitle);
+        intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_TITLE, safeTitle);
+        intent.putExtra(ChatbotActivity.EXTRA_ARTICLE_URL, currentUrl);
+        intent.putExtra(ChatbotActivity.EXTRA_HISTORY_KEY, buildHistoryKey(currentUrl, safeTitle));
+        startActivity(intent);
+    }
+
+    private String getSentimentText(String label) {
+        if (label != null) {
+            String l = label.trim().toLowerCase(java.util.Locale.ROOT);
+            if (l.equals("tich cuc") || l.equals("tích cực") || l.equals("positive")) {
+                return "Tin tích cực";
+            } else if (l.equals("tieu cuc") || l.equals("tiêu cực") || l.equals("negative")) {
+                return "Tin tiêu cực";
+            }
+        }
+        return "Tin trung lập";
+    }
+
+    private String getSpamText(String label) {
+        if (label != null) {
+            String l = label.trim().toLowerCase(java.util.Locale.ROOT);
+            if (l.equals("spam")) {
+                return "Tin spam";
+            }
+        }
+        return "Tin không spam";
+    }
+
+    private void showTooltip(android.view.View anchor, String text, int xOffset) {
+        android.view.View view = getLayoutInflater().inflate(R.layout.popup_tooltip, null);
+        TextView tv = view.findViewById(R.id.tvTooltipText);
+        tv.setText(text);
+
+        android.widget.PopupWindow popup = new android.widget.PopupWindow(
+                view,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                true);
+        popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        popup.setOutsideTouchable(true);
+
+        // Calculate position: center horizontally above the anchor
+        view.measure(android.view.View.MeasureSpec.UNSPECIFIED, android.view.View.MeasureSpec.UNSPECIFIED);
+        int popupWidth = view.getMeasuredWidth();
+        int popupHeight = view.getMeasuredHeight();
+
+        int[] location = new int[2];
+        anchor.getLocationOnScreen(location);
+        int x = location[0] + (anchor.getWidth() / 2) - (popupWidth / 2) + xOffset;
+        int y = location[1] - popupHeight - 20; // Place above the icon with some margin
+
+        popup.showAtLocation(anchor, android.view.Gravity.NO_GRAVITY, x, y);
+    }
+
     // ===== Text-to-Speech Methods =====
 
     private void setupTTSListener() {
@@ -885,16 +1023,6 @@ public class DetailActivity extends AppCompatActivity {
         String pretty = prettyContent(content);
         tvContent.setText(pretty);
         tvContent.setVisibility(android.view.View.VISIBLE);
-
-        try {
-            PrecomputedTextCompat.Params params = new PrecomputedTextCompat.Params.Builder(tvContent.getPaint())
-                    .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
-                    .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
-                    .build();
-            PrecomputedTextCompat p = PrecomputedTextCompat.create(tvContent.getText(), params);
-            TextViewCompat.setPrecomputedText(tvContent, p);
-        } catch (Exception ignore) {
-        }
     }
 
     private void updateTTSUI(boolean isPlaying, boolean isLoading) {

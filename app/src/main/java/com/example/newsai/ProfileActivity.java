@@ -55,6 +55,12 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Stats Settings Button
+        findViewById(R.id.btnStatsSettings).setOnClickListener(v -> {
+            Intent intent = new Intent(this, com.example.newsai.stats.StatsSettingsActivity.class);
+            startActivity(intent);
+        });
+
         // Profile item click listeners for editing
         findViewById(R.id.layoutFullName)
                 .setOnClickListener(v -> showEditDialog("Họ và tên", editName.getText().toString(), "name"));
@@ -164,34 +170,50 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showEditDialog(String title, String currentValue, String field) {
-        android.widget.EditText input = new android.widget.EditText(this);
-        input.setText(currentValue != null ? currentValue : "");
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_edit_profile, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextView tvTitle = view.findViewById(R.id.tvDialogTitle);
+        com.google.android.material.textfield.TextInputEditText etInput = view.findViewById(R.id.etDialogInput);
+        View btnCancel = view.findViewById(R.id.btnDialogCancel);
+        View btnSave = view.findViewById(R.id.btnDialogSave);
+
+        tvTitle.setText(title);
+        etInput.setText(currentValue != null ? currentValue : "");
         if (currentValue != null) {
-            input.setSelection(currentValue.length());
+            etInput.setSelection(currentValue.length());
         }
 
         // Set input type for phone
         if (field.equals("phone")) {
-            input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
+            etInput.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setView(input)
-                .setPositiveButton("Lưu", (dialog, which) -> {
-                    String newValue = input.getText().toString().trim();
-                    if (!TextUtils.isEmpty(newValue)) {
-                        if (field.equals("name")) {
-                            editName.setText(newValue);
-                            updateUserInfo();
-                        } else if (field.equals("phone")) {
-                            editPhone.setText(newValue);
-                            updatePhone(newValue);
-                        }
-                    }
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            String newValue = etInput.getText().toString().trim();
+            if (!TextUtils.isEmpty(newValue)) {
+                if (field.equals("name")) {
+                    editName.setText(newValue);
+                    updateUserInfo();
+                } else if (field.equals("phone")) {
+                    editPhone.setText(newValue);
+                    updatePhone(newValue);
+                }
+                dialog.dismiss();
+            } else {
+                etInput.setError("Không được để trống");
+            }
+        });
+
+        dialog.show();
     }
 
     /**

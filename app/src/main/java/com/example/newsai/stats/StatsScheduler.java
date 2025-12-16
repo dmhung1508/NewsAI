@@ -24,14 +24,23 @@ public class StatsScheduler {
             Log.w(TAG, "Chưa có email người dùng, bỏ qua setup lịch gửi thống kê.");
             return;
         }
-        scheduleType(context, TYPE_DAY);
-        scheduleType(context, TYPE_WEEK);
-        scheduleType(context, TYPE_MONTH);
-        scheduleType(context, TYPE_YEAR);
+
+        if (UserPrefs.isStatsDailyEnabled(context)) {
+            scheduleType(context, TYPE_DAY);
+        }
+        if (UserPrefs.isStatsWeeklyEnabled(context)) {
+            scheduleType(context, TYPE_WEEK);
+        }
+        if (UserPrefs.isStatsMonthlyEnabled(context)) {
+            scheduleType(context, TYPE_MONTH);
+        }
+        if (UserPrefs.isStatsYearlyEnabled(context)) {
+            scheduleType(context, TYPE_YEAR);
+        }
     }
 
     public static void scheduleType(Context context, String type) {
-        long triggerAt = getNextTriggerTime(type);
+        long triggerAt = getNextTriggerTime(context, type);
         if (triggerAt <= 0) {
             Log.w(TAG, "Không tính được thời gian cho " + type);
             return;
@@ -43,8 +52,7 @@ public class StatsScheduler {
                 context,
                 type.hashCode(),
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         AlarmManager alarmManager = context.getSystemService(AlarmManager.class);
         if (alarmManager == null) {
             Log.w(TAG, "Không có AlarmManager");
@@ -70,7 +78,36 @@ public class StatsScheduler {
         }
     }
 
-    private static long getNextTriggerTime(String type) {
+    public static void rescheduleAll(Context context) {
+        // Cancel all first
+        cancelAll(context);
+        // Then setup enabled ones
+        setupAll(context);
+    }
+
+    private static void cancelAll(Context context) {
+        cancelType(context, TYPE_DAY);
+        cancelType(context, TYPE_WEEK);
+        cancelType(context, TYPE_MONTH);
+        cancelType(context, TYPE_YEAR);
+    }
+
+    private static void cancelType(Context context, String type) {
+        Intent intent = new Intent(context, StatsAlarmReceiver.class);
+        intent.setAction("com.example.newsai.STATS_ALARM");
+        intent.putExtra(EXTRA_TYPE, type);
+        PendingIntent pi = PendingIntent.getBroadcast(
+                context,
+                type.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        AlarmManager alarmManager = context.getSystemService(AlarmManager.class);
+        if (alarmManager != null) {
+            alarmManager.cancel(pi);
+        }
+    }
+
+    public static long getNextTriggerTime(Context context, String type) {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
@@ -78,35 +115,47 @@ public class StatsScheduler {
 
         switch (type) {
             case TYPE_DAY:
-                cal.set(Calendar.HOUR_OF_DAY, 8);
-                cal.set(Calendar.MINUTE, 0);
+                int dHour = UserPrefs.getStatsDailyHour(context);
+                int dMinute = UserPrefs.getStatsDailyMinute(context);
+                cal.set(Calendar.HOUR_OF_DAY, dHour);
+                cal.set(Calendar.MINUTE, dMinute);
                 if (cal.getTimeInMillis() <= now) {
                     cal.add(Calendar.DAY_OF_YEAR, 1);
                 }
                 break;
             case TYPE_WEEK:
-                cal.set(Calendar.HOUR_OF_DAY, 8);
-                cal.set(Calendar.MINUTE, 0);
+                int wDow = UserPrefs.getStatsWeeklyDow(context);
+                int wHour = UserPrefs.getStatsWeeklyHour(context);
+                int wMinute = UserPrefs.getStatsWeeklyMinute(context);
+                cal.set(Calendar.HOUR_OF_DAY, wHour);
+                cal.set(Calendar.MINUTE, wMinute);
                 int currentDow = cal.get(Calendar.DAY_OF_WEEK);
-                int diff = (Calendar.MONDAY - currentDow + 7) % 7;
+                int diff = (wDow - currentDow + 7) % 7;
                 cal.add(Calendar.DAY_OF_YEAR, diff);
                 if (cal.getTimeInMillis() <= now) {
                     cal.add(Calendar.WEEK_OF_YEAR, 1);
                 }
                 break;
             case TYPE_MONTH:
-                cal.set(Calendar.DAY_OF_MONTH, 1);
-                cal.set(Calendar.HOUR_OF_DAY, 8);
-                cal.set(Calendar.MINUTE, 0);
+                int mDay = UserPrefs.getStatsMonthlyDay(context);
+                int mHour = UserPrefs.getStatsMonthlyHour(context);
+                int mMinute = UserPrefs.getStatsMonthlyMinute(context);
+                cal.set(Calendar.DAY_OF_MONTH, mDay);
+                cal.set(Calendar.HOUR_OF_DAY, mHour);
+                cal.set(Calendar.MINUTE, mMinute);
                 if (cal.getTimeInMillis() <= now) {
                     cal.add(Calendar.MONTH, 1);
                 }
                 break;
             case TYPE_YEAR:
-                cal.set(Calendar.MONTH, Calendar.JANUARY);
-                cal.set(Calendar.DAY_OF_MONTH, 1);
-                cal.set(Calendar.HOUR_OF_DAY, 8);
-                cal.set(Calendar.MINUTE, 0);
+                int yDay = UserPrefs.getStatsYearlyDay(context);
+                int yMonth = UserPrefs.getStatsYearlyMonth(context);
+                int yHour = UserPrefs.getStatsYearlyHour(context);
+                int yMinute = UserPrefs.getStatsYearlyMinute(context);
+                cal.set(Calendar.MONTH, yMonth);
+                cal.set(Calendar.DAY_OF_MONTH, yDay);
+                cal.set(Calendar.HOUR_OF_DAY, yHour);
+                cal.set(Calendar.MINUTE, yMinute);
                 if (cal.getTimeInMillis() <= now) {
                     cal.add(Calendar.YEAR, 1);
                 }
@@ -126,4 +175,3 @@ public class StatsScheduler {
         StatsEmailSender.send(context, type);
     }
 }
-

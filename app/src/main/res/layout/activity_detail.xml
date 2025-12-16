@@ -321,32 +321,38 @@
         android:layout_width="0dp"
         android:layout_height="120dp"
         android:background="@drawable/bottom_fade_overlay"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Bottom Action Bar - Compact Floating Style -->
+    <!-- Menu Container -->
+    <!-- Menu Container -->
     <LinearLayout
-        android:id="@+id/bottomBar"
+        android:id="@+id/menuContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@drawable/pill_button_bg"
-        android:elevation="12dp"
-        android:padding="4dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
         android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_marginEnd="16dp"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/fabMain"
+        app:layout_constraintEnd_toStartOf="@+id/fabMain"
+        app:layout_constraintTop_toTopOf="@+id/fabMain">
 
         <!-- AI Đọc Báo Button -->
         <FrameLayout
             android:id="@+id/btnTTS"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
             android:background="@drawable/pill_item_bg"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:elevation="6dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -369,10 +375,11 @@
             android:id="@+id/btnComment"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginStart="6dp"
+            android:layout_marginEnd="12dp"
             android:background="@drawable/pill_item_bg"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:elevation="6dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -403,10 +410,10 @@
             android:id="@+id/btnChatbot"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginStart="6dp"
             android:background="@drawable/pill_item_bg_blue"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:elevation="6dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -416,5 +423,18 @@
                 app:tint="@android:color/white" />
         </FrameLayout>
     </LinearLayout>
+
+    <!-- Main FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_more_vert"
+        app:backgroundTint="#4F6EF7"
+        app:tint="@android:color/white"
+        app:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

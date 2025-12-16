@@ -116,8 +116,25 @@ public class VerifyNewsActivity extends AppCompatActivity {
                 return;
             }
 
-            // Start verification workflow
-            startVerificationWorkflow(newsText);
+            // Check VIP status and daily limit
+            com.example.newsai.util.VipManager.isVipActive(this, isVip -> {
+                if (!isVip) {
+                    if (isDailyLimitReached()) {
+                        runOnUiThread(() -> showUpgradeDialog());
+                        return;
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    // Save usage if not VIP (or even if VIP, to keep track, but logic only blocks
+                    // non-VIP)
+                    if (!isVip) {
+                        saveDailyUsage();
+                    }
+                    // Start verification workflow
+                    startVerificationWorkflow(newsText);
+                });
+            });
         });
     }
 
@@ -140,7 +157,8 @@ public class VerifyNewsActivity extends AppCompatActivity {
         btnVerify.setAlpha(0.5f);
 
         // Show initial status
-        tvLoadingStatus.setText("Đang xác nhận yêu cầu về \"" + newsText + "\" và chuẩn bị tra cứu thông tin chính xác.");
+        tvLoadingStatus
+                .setText("Đang xác nhận yêu cầu về \"" + newsText + "\" và chuẩn bị tra cứu thông tin chính xác.");
 
         // Scroll to processing card with delay to ensure it's visible
         handler.postDelayed(() -> smoothScrollToView(cvProcessing), 200);
@@ -176,19 +194,21 @@ public class VerifyNewsActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    hideLoading();
+                    // Fallback for server errors (500, 502, etc.)
                     Toast.makeText(VerifyNewsActivity.this,
-                            "Lỗi tìm kiếm: " + response.code(),
+                            "Lỗi tìm kiếm (" + response.code() + "), đang sử dụng kiến thức AI...",
                             Toast.LENGTH_SHORT).show();
+                    verifyNewsWithExtractedInfo(newsText, new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(Call<SearchResponse> call, Throwable t) {
-                hideLoading();
+                // Fallback: Proceed without external info
                 Toast.makeText(VerifyNewsActivity.this,
-                        "Không thể kết nối: " + t.getMessage(),
-                        Toast.LENGTH_LONG).show();
+                        "Hệ thống tìm kiếm gián đoạn, đang sử dụng kiến thức AI...",
+                        Toast.LENGTH_SHORT).show();
+                verifyNewsWithExtractedInfo(newsText, new ArrayList<>());
             }
         });
     }
@@ -218,8 +238,7 @@ public class VerifyNewsActivity extends AppCompatActivity {
         LinearLayout itemLayout = new LinearLayout(this);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
+                LinearLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.setMargins(0, 0, 0, dpToPx(8));
         itemLayout.setLayoutParams(layoutParams);
         itemLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -239,16 +258,14 @@ public class VerifyNewsActivity extends AppCompatActivity {
         textContainer.setLayoutParams(new LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                1.0f
-        ));
+                1.0f));
         textContainer.setOrientation(LinearLayout.VERTICAL);
 
         // Title
         TextView titleText = new TextView(this);
         titleText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
+                LinearLayout.LayoutParams.WRAP_CONTENT));
         titleText.setText(result.getTitle());
         titleText.setTextColor(ContextCompat.getColor(this, R.color.title_black));
         titleText.setTextSize(14);
@@ -259,8 +276,7 @@ public class VerifyNewsActivity extends AppCompatActivity {
         TextView domainText = new TextView(this);
         domainText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
+                LinearLayout.LayoutParams.WRAP_CONTENT));
         domainText.setText(extractDomain(result.getUrl()));
         domainText.setTextColor(ContextCompat.getColor(this, R.color.text_gray));
         domainText.setTextSize(12);
@@ -300,7 +316,7 @@ public class VerifyNewsActivity extends AppCompatActivity {
         // Extract content from top 3 results
         int maxResults = Math.min(3, results.size());
         List<ExtractResponse> extractedContents = new ArrayList<>();
-        final int[] completedRequests = {0};
+        final int[] completedRequests = { 0 };
 
         for (int i = 0; i < maxResults; i++) {
             SearchResponse.SearchResult result = results.get(i);
@@ -356,18 +372,24 @@ public class VerifyNewsActivity extends AppCompatActivity {
 
         // Build related_info string from extracted contents
         StringBuilder relatedInfo = new StringBuilder();
-        for (int i = 0; i < extractedContents.size(); i++) {
-            ExtractResponse content = extractedContents.get(i);
-            relatedInfo.append("Nguồn ").append(i + 1).append(": ").append(content.getTitle()).append("\n");
-            relatedInfo.append("URL: ").append(content.getUrl()).append("\n");
 
-            // Limit content to 500 characters
-            String textContent = content.getTextContent();
-            if (textContent != null) {
-                if (textContent.length() > 500) {
-                    textContent = textContent.substring(0, 500) + "...";
+        if (extractedContents.isEmpty()) {
+            relatedInfo.append(
+                    "Hệ thống tìm kiếm tạm thời gián đoạn. Hãy xác minh tin tức này dựa trên kiến thức có sẵn của bạn. Nếu tin tức này là sự kiện mới chưa có trong dữ liệu của bạn, hãy phân tích dựa trên tính logic và các dấu hiệu nhận biết tin giả.");
+        } else {
+            for (int i = 0; i < extractedContents.size(); i++) {
+                ExtractResponse content = extractedContents.get(i);
+                relatedInfo.append("Nguồn ").append(i + 1).append(": ").append(content.getTitle()).append("\n");
+                relatedInfo.append("URL: ").append(content.getUrl()).append("\n");
+
+                // Limit content to 500 characters
+                String textContent = content.getTextContent();
+                if (textContent != null) {
+                    if (textContent.length() > 500) {
+                        textContent = textContent.substring(0, 500) + "...";
+                    }
+                    relatedInfo.append("Nội dung: ").append(textContent).append("\n\n");
                 }
-                relatedInfo.append("Nội dung: ").append(textContent).append("\n\n");
             }
         }
 
@@ -453,6 +475,33 @@ public class VerifyNewsActivity extends AppCompatActivity {
     /**
      * Smooth scroll to a specific view
      */
+    private boolean isDailyLimitReached() {
+        android.content.SharedPreferences prefs = getSharedPreferences("NewsAIPrefs", MODE_PRIVATE);
+        String lastDate = prefs.getString("last_verify_date", "");
+        String today = new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        return lastDate.equals(today);
+    }
+
+    private void saveDailyUsage() {
+        android.content.SharedPreferences prefs = getSharedPreferences("NewsAIPrefs", MODE_PRIVATE);
+        String today = new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        prefs.edit().putString("last_verify_date", today).apply();
+    }
+
+    private void showUpgradeDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Nâng cấp VIP")
+                .setMessage(
+                        "Bạn đã hết lượt xác minh miễn phí hôm nay (1 lần/ngày). Vui lòng nâng cấp VIP để xác minh không giới hạn!")
+                .setPositiveButton("Nâng cấp ngay", (dialog, which) -> {
+                    Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Để sau", null)
+                .show();
+    }
+
     private void smoothScrollToView(final View view) {
         if (scrollView != null && view != null) {
             // Calculate the position to scroll to

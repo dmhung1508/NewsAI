@@ -94,6 +94,7 @@
         <activity android:name=".VerifyNewsActivity" android:exported="true"/>
         <activity android:name=".VipAccountActivity" android:exported="false"/>
         <activity android:name=".VipPaymentActivity" android:exported="false"/>
+        <activity android:name=".stats.StatsSettingsActivity" android:exported="false"/>
 
         <receiver
             android:name=".stats.StatsAlarmReceiver"

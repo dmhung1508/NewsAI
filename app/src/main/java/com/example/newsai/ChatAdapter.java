@@ -81,6 +81,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         void bind(ChatMessage message) {
             tvMessage.setText(renderMarkdown(message.getContent()));
+            tvMessage.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
         }
     }
 
@@ -96,6 +97,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         void bind(ChatMessage message, OnSuggestionClickListener listener) {
             tvMessage.setText(renderMarkdown(message.getContent()));
+            tvMessage.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
 
             if (message.hasSuggestions()) {
                 suggestionsLayout.setVisibility(View.VISIBLE);
@@ -133,6 +135,11 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (text == null)
             return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY);
         String html = text;
+
+        // Handle links: [Title](URL) -> <a href="URL">Title</a>
+        // Note: Simple regex, might need refinement for complex cases
+        html = html.replaceAll("\\[(.*?)\\]\\((.*?)\\)", "<a href=\"$2\">$1</a>");
+
         Matcher h3Matcher = H3_PATTERN.matcher(html);
         html = h3Matcher.replaceAll("<h3>$1</h3>");
         Matcher boldMatcher = BOLD_PATTERN.matcher(html);

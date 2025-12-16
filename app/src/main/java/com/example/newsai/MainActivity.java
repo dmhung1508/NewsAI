@@ -143,9 +143,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // canScrollVertically(1) == false nghĩa là đã ở cuối danh sách
                 if (!recyclerView.canScrollVertically(1)
                         && !isLoadingMore
-                        && !isClusterMode
-                        && currentFilter.equals("home")) {
-                    loadMoreNews();
+                        && !isClusterMode) {
+                    if (currentFilter.equals("home") || currentFilter.equals("positive")
+                            || currentFilter.equals("negative")) {
+                        loadMoreNews();
+                    }
                 }
             }
         });
@@ -519,6 +521,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** Tải thêm 20 bài mới (bài báo + facebook) */
     private void loadMoreNews() {
+        if (currentFilter.equals("positive")) {
+            loadMoreSentimentNews("tich cuc");
+            return;
+        } else if (currentFilter.equals("negative")) {
+            loadMoreSentimentNews("tieu cuc");
+            return;
+        }
+
         isLoadingMore = true;
         ApiService api = ApiClient.get().create(ApiService.class);
         List<NewsItem> newBatch = new ArrayList<>();
@@ -565,6 +575,80 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
     }
 
+    private void loadMoreSentimentNews(String sentiment) {
+        isLoadingMore = true;
+        ApiService api = ApiClient.get().create(ApiService.class);
+        List<NewsItem> newBatch = new ArrayList<>();
+
+        // Fetch next batch
+        api.getArticles(currentSkip, limit).enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
+                if (r1.isSuccessful() && r1.body() != null) {
+                    newBatch.addAll(r1.body());
+                }
+                api.getFacebookPosts(currentSkip, limit).enqueue(new Callback<List<NewsItem>>() {
+                    @Override
+                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
+                        if (r2.isSuccessful() && r2.body() != null) {
+                            newBatch.addAll(r2.body());
+                        }
+
+                        // Filter by sentiment
+                        List<NewsItem> filteredBatch = new ArrayList<>();
+                        for (NewsItem item : newBatch) {
+                            String itemSentiment = item.getSentiment_label();
+                            if (sentiment.equals(itemSentiment)) {
+                                filteredBatch.add(item);
+                            }
+                        }
+
+                        currentSkip += limit;
+                        allNews.addAll(newBatch); // Keep track of all fetched news
+
+                        if (filteredBatch.size() > 0) {
+                            newsAdapter.addAll(filteredBatch);
+                        } else {
+                            // If no matching items found in this batch, try loading next batch
+                            // automatically
+                            // to avoid user seeing "loading" but getting nothing
+                            // But for safety, let's just stop loading for now to prevent infinite loops if
+                            // no data
+                        }
+                        isLoadingMore = false;
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
+                        // Handle partial success (articles loaded, fb posts failed)
+                        // Match logic from loadMoreNews
+                        currentSkip += limit;
+                        allNews.addAll(newBatch);
+
+                        // Filter what we have so far
+                        List<NewsItem> filteredBatch = new ArrayList<>();
+                        for (NewsItem item : newBatch) {
+                            String itemSentiment = item.getSentiment_label();
+                            if (sentiment.equals(itemSentiment)) {
+                                filteredBatch.add(item);
+                            }
+                        }
+
+                        if (filteredBatch.size() > 0) {
+                            newsAdapter.addAll(filteredBatch);
+                        }
+                        isLoadingMore = false;
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                isLoadingMore = false;
+            }
+        });
+    }
+
     /** Lọc theo loại bài trên danh sách đã nạp */
     private void filterNewsByType(String type) {
         if (allNews.isEmpty()) {
@@ -597,37 +681,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** Lấy toàn bộ dữ liệu (skip=0) rồi lọc theo sentiment */
     private void loadAllNewsThenFilterBySentiment(final String sentiment) {
-        ApiService api = ApiClient.get().create(ApiService.class);
-        List<NewsItem> combined = new ArrayList<>();
-        api.getArticles(0, 100).enqueue(new Callback<List<NewsItem>>() {
-            @Override
-            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> r1) {
-                if (r1.isSuccessful() && r1.body() != null) {
-                    combined.addAll(r1.body());
-                }
-                api.getFacebookPosts(0, 100).enqueue(new Callback<List<NewsItem>>() {
-                    @Override
-                    public void onResponse(Call<List<NewsItem>> call2, Response<List<NewsItem>> r2) {
-                        if (r2.isSuccessful() && r2.body() != null) {
-                            combined.addAll(r2.body());
-                        }
-                        allNews = combined;
-                        filterNewsBySentiment(sentiment);
-                    }
+        currentSkip = 0; // Reset pagination
+        allNews = new ArrayList<>(); // Clear current list
+        newsAdapter.submit(new ArrayList<>()); // Clear UI
 
-                    @Override
-                    public void onFailure(Call<List<NewsItem>> call2, Throwable t) {
-                        allNews = combined;
-                        filterNewsBySentiment(sentiment);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
-                Log.e("API", "FAIL", t);
-            }
-        });
+        loadMoreSentimentNews(sentiment); // Start loading first batch
     }
 
     private void requestNotificationPermission() {

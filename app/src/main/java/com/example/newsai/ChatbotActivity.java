@@ -52,7 +52,6 @@ public class ChatbotActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(chatAdapter);
 
-
         grokApiService = new GrokApiService();
 
         articleTitle = getIntent().getStringExtra(EXTRA_ARTICLE_TITLE);
@@ -67,6 +66,18 @@ public class ChatbotActivity extends AppCompatActivity {
 
         btnSend.setOnClickListener(v -> sendMessage());
         btnBack.setOnClickListener(v -> finish());
+
+        ImageButton btnDelete = findViewById(R.id.btnDelete);
+        btnDelete.setOnClickListener(v -> {
+            com.example.newsai.util.VipManager.isVipActive(this, isVip -> {
+                if (isVip) {
+                    runOnUiThread(() -> showDeleteConfirmationDialog());
+                } else {
+                    runOnUiThread(() -> showUpgradeDialog(
+                            "Tính năng xóa lịch sử chỉ dành cho tài khoản VIP. Vui lòng nâng cấp để sử dụng!"));
+                }
+            });
+        });
 
         // Xử lý click gợi ý
         chatAdapter.setOnSuggestionClickListener(suggestion -> {
@@ -83,70 +94,96 @@ public class ChatbotActivity extends AppCompatActivity {
         }
     }
 
+    private int userQuestionCount = 0;
+
     private void sendMessage() {
         String messageText = edtMessage.getText().toString().trim();
         if (!messageText.isEmpty()) {
-            // Thêm tin nhắn của user
-            messageList.add(new ChatMessage(messageText, true));
-            chatAdapter.notifyItemInserted(messageList.size() - 1);
-            recyclerView.scrollToPosition(messageList.size() - 1);
-            edtMessage.setText("");
-            saveHistory();
-
-            // Disable nút gửi trong khi chờ phản hồi
-            btnSend.setEnabled(false);
-
-            // Thêm tin nhắn "Đang suy nghĩ..."
-            ChatMessage thinkingMsg = new ChatMessage("Đang suy nghĩ...", false);
-            messageList.add(thinkingMsg);
-            int thinkingPosition = messageList.size() - 1;
-            chatAdapter.notifyItemInserted(thinkingPosition);
-            recyclerView.scrollToPosition(thinkingPosition);
-
-            List<ChatMessage> payloadHistory = buildHistoryForModel(thinkingPosition);
-            grokApiService.sendConversation(payloadHistory, articleTitle, articleUrl, new GrokApiService.GrokCallback() {
-                @Override
-                public void onSuccess(String response) {
-                    // Xóa tin nhắn "Đang suy nghĩ..."
-                    messageList.remove(thinkingPosition);
-                    chatAdapter.notifyItemRemoved(thinkingPosition);
-
-                    // Thêm phản hồi từ Grok
-                    messageList.add(new ChatMessage(response, false));
-                    chatAdapter.notifyItemInserted(messageList.size() - 1);
-                    recyclerView.scrollToPosition(messageList.size() - 1);
-                    saveHistory();
-                    // Enable lại nút gửi
-                    btnSend.setEnabled(true);
+            // Check VIP status before sending
+            com.example.newsai.util.VipManager.isVipActive(this, isVip -> {
+                if (!isVip && userQuestionCount >= 3) {
+                    runOnUiThread(() -> showUpgradeDialog(
+                            "Bạn đã hết lượt hỏi miễn phí (3 câu/bài). Vui lòng nâng cấp VIP để hỏi không giới hạn!"));
+                    return;
                 }
 
-                @Override
-                public void onError(String error) {
-                    // Xóa tin nhắn "Đang suy nghĩ..."
-                    messageList.remove(thinkingPosition);
-                    chatAdapter.notifyItemRemoved(thinkingPosition);
-
-                    // Hiển thị lỗi
-                    Toast.makeText(ChatbotActivity.this, error, Toast.LENGTH_SHORT).show();
-
-
-                    messageList.add(new ChatMessage(
-                        "Xin lỗi, hiện tại tôi gặp sự cố kết nối với Grok AI. Vui lòng thử lại sau.",
-                        false
-                    ));
+                runOnUiThread(() -> {
+                    // Thêm tin nhắn của user
+                    messageList.add(new ChatMessage(messageText, true));
                     chatAdapter.notifyItemInserted(messageList.size() - 1);
                     recyclerView.scrollToPosition(messageList.size() - 1);
+                    edtMessage.setText("");
+                    userQuestionCount++; // Increment count
                     saveHistory();
-                    btnSend.setEnabled(true);
-                }
+
+                    // Disable nút gửi trong khi chờ phản hồi
+                    btnSend.setEnabled(false);
+
+                    // Thêm tin nhắn "Đang suy nghĩ..."
+                    ChatMessage thinkingMsg = new ChatMessage("Đang suy nghĩ...", false);
+                    messageList.add(thinkingMsg);
+                    int thinkingPosition = messageList.size() - 1;
+                    chatAdapter.notifyItemInserted(thinkingPosition);
+                    recyclerView.scrollToPosition(thinkingPosition);
+
+                    List<ChatMessage> payloadHistory = buildHistoryForModel(thinkingPosition);
+                    grokApiService.sendConversation(payloadHistory, articleTitle, articleUrl,
+                            new GrokApiService.GrokCallback() {
+                                @Override
+                                public void onSuccess(String response) {
+                                    // Xóa tin nhắn "Đang suy nghĩ..."
+                                    messageList.remove(thinkingPosition);
+                                    chatAdapter.notifyItemRemoved(thinkingPosition);
+
+                                    // Thêm phản hồi từ Grok
+                                    messageList.add(new ChatMessage(response, false));
+                                    chatAdapter.notifyItemInserted(messageList.size() - 1);
+                                    recyclerView.scrollToPosition(messageList.size() - 1);
+                                    saveHistory();
+                                    // Enable lại nút gửi
+                                    btnSend.setEnabled(true);
+                                }
+
+                                @Override
+                                public void onError(String error) {
+                                    // Xóa tin nhắn "Đang suy nghĩ..."
+                                    messageList.remove(thinkingPosition);
+                                    chatAdapter.notifyItemRemoved(thinkingPosition);
+
+                                    // Hiển thị lỗi
+                                    Toast.makeText(ChatbotActivity.this, error, Toast.LENGTH_SHORT).show();
+
+                                    messageList.add(new ChatMessage(
+                                            "Xin lỗi, hiện tại tôi gặp sự cố kết nối với Grok AI. Vui lòng thử lại sau.",
+                                            false));
+                                    chatAdapter.notifyItemInserted(messageList.size() - 1);
+                                    recyclerView.scrollToPosition(messageList.size() - 1);
+                                    saveHistory();
+                                    btnSend.setEnabled(true);
+                                }
+                            });
+                });
             });
         }
+    }
+
+    private void showUpgradeDialog(String message) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Nâng cấp VIP")
+                .setMessage(message)
+                .setPositiveButton("Nâng cấp ngay", (dialog, which) -> {
+                    // Navigate to VIP upgrade screen (optional, for now just close)
+                    Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Để sau", null)
+                .show();
     }
 
     private List<ChatMessage> buildHistoryForModel(int excludeIndex) {
         List<ChatMessage> history = new ArrayList<>();
         for (int i = 0; i < messageList.size(); i++) {
-            if (i == excludeIndex) continue;
+            if (i == excludeIndex)
+                continue;
             history.add(messageList.get(i));
         }
         return history;
@@ -155,9 +192,8 @@ public class ChatbotActivity extends AppCompatActivity {
     private void initializeConversation() {
         if (!loadHistory()) {
             ChatMessage welcomeMsg = new ChatMessage(
-                buildWelcomeMessage(articleTitle, articleUrl),
-                false
-            );
+                    buildWelcomeMessage(articleTitle, articleUrl),
+                    false);
             welcomeMsg.setSuggestions(buildSuggestions(articleTitle));
             messageList.add(welcomeMsg);
             chatAdapter.notifyDataSetChanged();
@@ -169,15 +205,20 @@ public class ChatbotActivity extends AppCompatActivity {
 
     private boolean loadHistory() {
         String historyJson = chatPreferences.getString(historyKey, null);
-        if (TextUtils.isEmpty(historyJson)) return false;
+        if (TextUtils.isEmpty(historyJson))
+            return false;
         try {
             JSONArray array = new JSONArray(historyJson);
+            userQuestionCount = 0; // Reset count
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
+                boolean isUser = obj.optBoolean("isUser", false);
+                if (isUser) {
+                    userQuestionCount++;
+                }
                 ChatMessage message = new ChatMessage(
-                    obj.optString("content", ""),
-                    obj.optBoolean("isUser", false)
-                );
+                        obj.optString("content", ""),
+                        isUser);
                 if (obj.has("suggestions")) {
                     JSONArray sugArr = obj.getJSONArray("suggestions");
                     String[] suggestions = new String[sugArr.length()];
@@ -196,7 +237,8 @@ public class ChatbotActivity extends AppCompatActivity {
     }
 
     private void saveHistory() {
-        if (chatPreferences == null || TextUtils.isEmpty(historyKey)) return;
+        if (chatPreferences == null || TextUtils.isEmpty(historyKey))
+            return;
         try {
             JSONArray array = new JSONArray();
             for (ChatMessage message : messageList) {
@@ -237,14 +279,39 @@ public class ChatbotActivity extends AppCompatActivity {
 
     private String[] buildSuggestions(String title) {
         if (TextUtils.isEmpty(title)) {
-            return new String[]{
-                "Bài viết này nói về điều gì?",
-                "Những điểm đáng chú ý nhất là gì?"
+            return new String[] {
+                    "Bài viết này nói về điều gì?",
+                    "Những điểm đáng chú ý nhất là gì?"
             };
         }
-        return new String[]{
-            "Tóm tắt nội dung chính của \"" + title + "\"",
-            "Ảnh hưởng của \"" + title + "\" là gì?"
+        return new String[] {
+                "Tóm tắt nội dung chính của \"" + title + "\"",
+                "Ảnh hưởng của \"" + title + "\" là gì?"
         };
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Xóa lịch sử chat")
+                .setMessage("Bạn có chắc chắn muốn xóa toàn bộ lịch sử trò chuyện không?")
+                .setPositiveButton("Xóa", (dialog, which) -> clearHistory())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void clearHistory() {
+        // Clear list
+        messageList.clear();
+        userQuestionCount = 0; // Reset count
+
+        // Remove from prefs
+        if (chatPreferences != null && !TextUtils.isEmpty(historyKey)) {
+            chatPreferences.edit().remove(historyKey).apply();
+        }
+
+        // Re-initialize
+        initializeConversation();
+
+        Toast.makeText(this, "Đã xóa lịch sử chat", Toast.LENGTH_SHORT).show();
     }
 }
