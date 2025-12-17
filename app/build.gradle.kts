@@ -52,6 +52,9 @@ dependencies {
     
     // Firebase Firestore for comments
     implementation("com.google.firebase:firebase-firestore")
+    
+    // Firebase Storage for avatar upload
+    implementation("com.google.firebase:firebase-storage")
 
     // Also add the dependencies for the Credential Manager libraries and specify their versions
     implementation("androidx.credentials:credentials:1.5.0")

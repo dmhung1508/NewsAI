@@ -172,8 +172,7 @@ public class ChatbotActivity extends AppCompatActivity {
                 .setTitle("Nâng cấp VIP")
                 .setMessage(message)
                 .setPositiveButton("Nâng cấp ngay", (dialog, which) -> {
-                    // Navigate to VIP upgrade screen (optional, for now just close)
-                    Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+                    startActivity(new android.content.Intent(this, VipAccountActivity.class));
                 })
                 .setNegativeButton("Để sau", null)
                 .show();

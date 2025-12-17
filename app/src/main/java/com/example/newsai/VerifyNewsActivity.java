@@ -496,7 +496,7 @@ public class VerifyNewsActivity extends AppCompatActivity {
                 .setMessage(
                         "Bạn đã hết lượt xác minh miễn phí hôm nay (1 lần/ngày). Vui lòng nâng cấp VIP để xác minh không giới hạn!")
                 .setPositiveButton("Nâng cấp ngay", (dialog, which) -> {
-                    Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+                    startActivity(new android.content.Intent(this, VipAccountActivity.class));
                 })
                 .setNegativeButton("Để sau", null)
                 .show();

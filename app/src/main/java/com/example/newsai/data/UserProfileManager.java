@@ -273,6 +273,27 @@ public class UserProfileManager {
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
 
+    /**
+     * Cập nhật avatar URL
+     */
+    public void updateAvatarUrl(String avatarUrl) {
+        DocumentReference userDoc = getUserDoc();
+        if (userDoc == null)
+            return;
+
+        Map<String, Object> updates = new HashMap<>();
+        if (avatarUrl != null) {
+            updates.put(FIELD_PHOTO_URL, avatarUrl);
+        } else {
+            updates.put(FIELD_PHOTO_URL, com.google.firebase.firestore.FieldValue.delete());
+        }
+        updates.put(FIELD_UPDATED_AT, System.currentTimeMillis());
+
+        userDoc.set(updates, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Avatar URL updated"))
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to update avatar: " + e.getMessage()));
+    }
+
     // =============== VIP METHODS ===============
 
     /**

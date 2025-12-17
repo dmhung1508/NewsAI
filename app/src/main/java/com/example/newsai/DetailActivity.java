@@ -98,6 +98,11 @@ public class DetailActivity extends AppCompatActivity {
     private TextView tvLoadMoreComments;
     private List<Comment> loadedComments = new java.util.ArrayList<>();
 
+    // Related Articles
+    private LinearLayout relatedArticlesSection;
+    private androidx.recyclerview.widget.RecyclerView rvRelatedArticles;
+    private com.example.newsai.ui.RelatedArticlesAdapter relatedAdapter;
+
     // FAB Menu
     private FloatingActionButton fabMain;
     private LinearLayout menuContainer;
@@ -197,7 +202,6 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         // Load user avatar
-        // Load user avatar
         loadCommentUserAvatar();
 
         // FAB Menu Setup
@@ -210,6 +214,11 @@ public class DetailActivity extends AppCompatActivity {
             fabMain.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF555555)); // Grey
             fabMain.setOnClickListener(v -> toggleMenu());
         }
+
+        // Related Articles Setup
+        relatedArticlesSection = findViewById(R.id.relatedArticlesSection);
+        rvRelatedArticles = findViewById(R.id.rvRelatedArticles);
+        setupRelatedArticles();
     }
 
     private void fetchArticleById(String articleId) {
@@ -343,6 +352,7 @@ public class DetailActivity extends AppCompatActivity {
         currentArticleId = String.valueOf(idSource.hashCode());
         loadCommentCount();
         loadInlineComments();
+        loadRelatedArticles();
     }
 
     // ===== Comment Methods =====
@@ -353,15 +363,56 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void loadCommentUserAvatar() {
-        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
-                .getCurrentUser();
-        if (user != null && user.getPhotoUrl() != null && ivCommentAvatar != null) {
-            Glide.with(this)
-                    .load(user.getPhotoUrl())
-                    .placeholder(R.drawable.ic_avatar)
-                    .error(R.drawable.ic_avatar)
-                    .into(ivCommentAvatar);
-        }
+        // Load avatar from Firestore profile (supports custom uploaded avatar)
+        com.example.newsai.data.UserProfileManager userProfileManager = new com.example.newsai.data.UserProfileManager();
+        userProfileManager.loadProfile(new com.example.newsai.data.UserProfileManager.OnProfileLoadedListener() {
+            @Override
+            public void onSuccess(com.example.newsai.data.UserProfileManager.UserProfile profile) {
+                runOnUiThread(() -> {
+                    if (ivCommentAvatar == null)
+                        return;
+
+                    String photoUrl = profile.getPhotoUrl();
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        Glide.with(DetailActivity.this)
+                                .load(photoUrl)
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(ivCommentAvatar);
+                    } else {
+                        // Fallback to Firebase Auth
+                        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
+                                .getCurrentUser();
+                        if (user != null && user.getPhotoUrl() != null) {
+                            Glide.with(DetailActivity.this)
+                                    .load(user.getPhotoUrl())
+                                    .placeholder(R.drawable.ic_avatar)
+                                    .error(R.drawable.ic_avatar)
+                                    .circleCrop()
+                                    .into(ivCommentAvatar);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                // Fallback to Firebase Auth
+                runOnUiThread(() -> {
+                    com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
+                            .getCurrentUser();
+                    if (user != null && user.getPhotoUrl() != null && ivCommentAvatar != null) {
+                        Glide.with(DetailActivity.this)
+                                .load(user.getPhotoUrl())
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(ivCommentAvatar);
+                    }
+                });
+            }
+        });
     }
 
     private void loadCommentCount() {
@@ -480,13 +531,61 @@ public class DetailActivity extends AppCompatActivity {
         tvContent.setText(comment.getContent());
         tvLikeCount.setText(String.valueOf(comment.getLikeCount()));
 
-        // Load avatar
-        if (comment.getUserAvatar() != null && !comment.getUserAvatar().isEmpty()) {
-            Glide.with(this)
-                    .load(comment.getUserAvatar())
-                    .placeholder(R.drawable.ic_avatar)
-                    .error(R.drawable.ic_avatar)
-                    .into(ivAvatar);
+        // Load avatar - for current user, load fresh from Firestore
+        com.google.firebase.auth.FirebaseUser currentUserForAvatar = com.google.firebase.auth.FirebaseAuth.getInstance()
+                .getCurrentUser();
+        boolean isCurrentUserComment = currentUserForAvatar != null
+                && currentUserForAvatar.getUid().equals(comment.getUserId());
+
+        if (isCurrentUserComment) {
+            // Load fresh avatar from Firestore for current user's comments
+            com.example.newsai.data.UserProfileManager profileManager = new com.example.newsai.data.UserProfileManager();
+            profileManager.loadProfile(new com.example.newsai.data.UserProfileManager.OnProfileLoadedListener() {
+                @Override
+                public void onSuccess(com.example.newsai.data.UserProfileManager.UserProfile profile) {
+                    runOnUiThread(() -> {
+                        String photoUrl = profile.getPhotoUrl();
+                        if (photoUrl != null && !photoUrl.isEmpty()) {
+                            Glide.with(DetailActivity.this)
+                                    .load(photoUrl)
+                                    .placeholder(R.drawable.ic_avatar)
+                                    .error(R.drawable.ic_avatar)
+                                    .circleCrop()
+                                    .into(ivAvatar);
+                        } else if (comment.getUserAvatar() != null && !comment.getUserAvatar().isEmpty()) {
+                            Glide.with(DetailActivity.this)
+                                    .load(comment.getUserAvatar())
+                                    .placeholder(R.drawable.ic_avatar)
+                                    .error(R.drawable.ic_avatar)
+                                    .circleCrop()
+                                    .into(ivAvatar);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(String error) {
+                    // Fallback to stored avatar
+                    if (comment.getUserAvatar() != null && !comment.getUserAvatar().isEmpty()) {
+                        Glide.with(DetailActivity.this)
+                                .load(comment.getUserAvatar())
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(ivAvatar);
+                    }
+                }
+            });
+        } else {
+            // For other users, use stored avatar
+            if (comment.getUserAvatar() != null && !comment.getUserAvatar().isEmpty()) {
+                Glide.with(this)
+                        .load(comment.getUserAvatar())
+                        .placeholder(R.drawable.ic_avatar)
+                        .error(R.drawable.ic_avatar)
+                        .circleCrop()
+                        .into(ivAvatar);
+            }
         }
 
         // Like state
@@ -1048,5 +1147,58 @@ public class DetailActivity extends AppCompatActivity {
         if (ttsManager != null) {
             ttsManager.release();
         }
+    }
+
+    // ===== Related Articles Methods =====
+    private void setupRelatedArticles() {
+        if (rvRelatedArticles == null)
+            return;
+
+        relatedAdapter = new com.example.newsai.ui.RelatedArticlesAdapter(this);
+        relatedAdapter.setOnItemClickListener(article -> {
+            // Open detail page for related article
+            Intent intent = new Intent(DetailActivity.this, DetailActivity.class);
+            intent.putExtra(K_ID, article.get_id());
+            startActivity(intent);
+        });
+
+        rvRelatedArticles.setLayoutManager(
+                new androidx.recyclerview.widget.LinearLayoutManager(
+                        this,
+                        androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL,
+                        false));
+        rvRelatedArticles.setAdapter(relatedAdapter);
+    }
+
+    private void loadRelatedArticles() {
+        if (relatedAdapter == null || currentArticleId == null)
+            return;
+
+        // Set current article ID to exclude from results
+        relatedAdapter.setCurrentArticleId(currentArticleId);
+
+        // Fetch latest articles from API
+        ApiService api = ApiClient.get().create(ApiService.class);
+        api.getArticles(0, 15).enqueue(new Callback<List<NewsItem>>() {
+            @Override
+            public void onResponse(Call<List<NewsItem>> call, Response<List<NewsItem>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    runOnUiThread(() -> {
+                        relatedAdapter.submitList(response.body());
+                        // Show section only if there are related articles
+                        if (relatedArticlesSection != null && relatedAdapter.getItemCount() > 0) {
+                            relatedArticlesSection.setVisibility(android.view.View.VISIBLE);
+                        }
+                    });
+                } else {
+                    Log.d(TAG, "No related articles found");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<NewsItem>> call, Throwable t) {
+                Log.e(TAG, "Failed to load related articles", t);
+            }
+        });
     }
 }

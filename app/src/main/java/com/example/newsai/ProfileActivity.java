@@ -1,9 +1,12 @@
 package com.example.newsai;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.content.Intent;
 import android.text.TextUtils;
@@ -12,12 +15,17 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 
+import com.bumptech.glide.Glide;
 import com.example.newsai.data.UserProfileManager;
 import com.example.newsai.util.UserPrefs;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -29,6 +37,11 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvVipExpiry;
     private UserProfileManager userProfileManager;
 
+    // Avatar
+    private ImageView imgAvatar;
+    private FrameLayout avatarContainer;
+    private ActivityResultLauncher<String> imagePickerLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,16 +51,25 @@ public class ProfileActivity extends AppCompatActivity {
         currentUser = mAuth.getCurrentUser();
         userProfileManager = new UserProfileManager();
 
+        // Setup image picker
+        setupImagePicker();
+
         // Khởi tạo views
         editName = findViewById(R.id.editName);
         editEmail = findViewById(R.id.editEmail);
         editPhone = findViewById(R.id.editPhone);
         tvUserName = findViewById(R.id.tvUserName);
         tvUserEmail = findViewById(R.id.tvUserEmail);
-        ImageView imageView = findViewById(R.id.imgAvatar);
+        imgAvatar = findViewById(R.id.imgAvatar);
+        avatarContainer = findViewById(R.id.avatarContainer);
         ImageButton btnBack = findViewById(R.id.btnBackProfile);
         cardVipStatus = findViewById(R.id.cardVipStatus);
         tvVipExpiry = findViewById(R.id.tvVipExpiry);
+
+        // Avatar click to change
+        if (avatarContainer != null) {
+            avatarContainer.setOnClickListener(v -> showAvatarOptions());
+        }
 
         // VIP Upgrade Button
         findViewById(R.id.btnUpgradeVip).setOnClickListener(v -> {
@@ -134,6 +156,9 @@ public class ProfileActivity extends AppCompatActivity {
                 tvUserEmail.setText(email);
             }
             UserPrefs.save(this, name, email);
+
+            // Load avatar from Firebase Auth
+            loadAvatar();
         }
 
         // Then load additional info from Firestore
@@ -318,5 +343,154 @@ public class ProfileActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
+    }
+
+    // ===== Avatar Methods =====
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        uploadAvatarToFirebase(uri);
+                    }
+                });
+    }
+
+    private void showAvatarOptions() {
+        String[] options = { "Chọn ảnh từ thư viện", "Xóa ảnh đại diện" };
+
+        new AlertDialog.Builder(this)
+                .setTitle("Đổi ảnh đại diện")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // Pick from gallery
+                        imagePickerLauncher.launch("image/*");
+                    } else if (which == 1) {
+                        // Remove avatar
+                        removeAvatar();
+                    }
+                })
+                .show();
+    }
+
+    private void uploadAvatarToFirebase(Uri imageUri) {
+        if (currentUser == null)
+            return;
+
+        Toast.makeText(this, "Đang tải ảnh lên...", Toast.LENGTH_SHORT).show();
+
+        // Compress and convert to base64, then save to Firestore
+        new Thread(() -> {
+            try {
+                // Load and compress image
+                java.io.InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(inputStream);
+                if (inputStream != null)
+                    inputStream.close();
+
+                // Resize if too large (max 400x400)
+                int maxSize = 400;
+                int width = bitmap.getWidth();
+                int height = bitmap.getHeight();
+                float scale = Math.min((float) maxSize / width, (float) maxSize / height);
+                if (scale < 1) {
+                    bitmap = android.graphics.Bitmap.createScaledBitmap(
+                            bitmap,
+                            (int) (width * scale),
+                            (int) (height * scale),
+                            true);
+                }
+
+                // Convert to base64
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, baos);
+                byte[] imageBytes = baos.toByteArray();
+                String base64Image = "data:image/jpeg;base64,"
+                        + android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP);
+
+                // Save to Firestore
+                runOnUiThread(() -> {
+                    userProfileManager.updateAvatarUrl(base64Image);
+
+                    // Also update local display
+                    Glide.with(ProfileActivity.this)
+                            .load(imageUri)
+                            .circleCrop()
+                            .into(imgAvatar);
+
+                    Toast.makeText(this, "Đã cập nhật ảnh đại diện", Toast.LENGTH_SHORT).show();
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Lỗi xử lý ảnh: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private void removeAvatar() {
+        if (currentUser == null)
+            return;
+
+        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                .setPhotoUri(null)
+                .build();
+
+        currentUser.updateProfile(profileUpdates)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        userProfileManager.updateAvatarUrl(null);
+                        imgAvatar.setImageResource(R.drawable.ic_avatar);
+                        Toast.makeText(this, "Đã xóa ảnh đại diện", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void loadAvatar() {
+        // First try to load from Firestore profile (supports base64)
+        userProfileManager.loadProfile(new UserProfileManager.OnProfileLoadedListener() {
+            @Override
+            public void onSuccess(UserProfileManager.UserProfile profile) {
+                runOnUiThread(() -> {
+                    String photoUrl = profile.getPhotoUrl();
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        Glide.with(ProfileActivity.this)
+                                .load(photoUrl)
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(imgAvatar);
+                    } else if (currentUser != null && currentUser.getPhotoUrl() != null) {
+                        // Fallback to Firebase Auth photo
+                        Glide.with(ProfileActivity.this)
+                                .load(currentUser.getPhotoUrl())
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(imgAvatar);
+                    } else {
+                        imgAvatar.setImageResource(R.drawable.ic_avatar);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    // Fallback to Firebase Auth
+                    if (currentUser != null && currentUser.getPhotoUrl() != null) {
+                        Glide.with(ProfileActivity.this)
+                                .load(currentUser.getPhotoUrl())
+                                .placeholder(R.drawable.ic_avatar)
+                                .error(R.drawable.ic_avatar)
+                                .circleCrop()
+                                .into(imgAvatar);
+                    } else {
+                        imgAvatar.setImageResource(R.drawable.ic_avatar);
+                    }
+                });
+            }
+        });
     }
 }

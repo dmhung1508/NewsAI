@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/home_bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -15,7 +15,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
+            android:background="@color/home_bg"
             android:padding="16dp">
 
             <ImageButton
@@ -43,21 +43,43 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
+            android:background="@color/home_bg"
             android:gravity="center"
             android:orientation="vertical"
             android:paddingTop="24dp"
             android:paddingBottom="32dp">
 
-            <ImageView
-                android:id="@+id/imgAvatar"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:background="@drawable/round_avatar"
-                android:clipToOutline="true"
-                android:contentDescription="Avatar"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_avatar" />
+            <!-- Avatar with camera overlay -->
+            <FrameLayout
+                android:id="@+id/avatarContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="@drawable/round_avatar"
+                    android:clipToOutline="true"
+                    android:contentDescription="Avatar"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_avatar" />
+
+                <!-- Camera icon overlay -->
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/circle_bg_blue">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_camera"
+                        app:tint="@android:color/white" />
+                </FrameLayout>
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvUserName"
@@ -135,13 +157,20 @@
         </androidx.cardview.widget.CardView>
 
         <!-- Profile Items -->
-        <LinearLayout
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
-            android:background="@android:color/white"
-            android:orientation="vertical"
-            android:paddingVertical="8dp">
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="8dp">
 
             <!-- Full Name -->
             <LinearLayout
@@ -311,6 +340,7 @@
                     app:tint="#9CA3AF" />
             </LinearLayout>
         </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
         <!-- Upgrade to VIP Button -->
         <com.google.android.material.button.MaterialButton
@@ -319,7 +349,7 @@
             android:layout_height="56dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#4F6EF7"
+            android:backgroundTint="@color/blue_primary"
             android:fontFamily="@font/ibmplexsans_semibold"
             android:text="Nâng cấp VIP"
             android:textAllCaps="false"
@@ -343,16 +373,16 @@
             android:fontFamily="@font/ibmplexsans_semibold"
             android:text="Cài đặt thống kê"
             android:textAllCaps="false"
-            android:textColor="#4F6EF7"
+            android:textColor="@color/blue_primary"
             android:textSize="16sp"
             app:cornerRadius="28dp"
-            app:strokeColor="#4F6EF7"
+            app:strokeColor="@color/blue_primary"
             app:strokeWidth="2dp"
             app:icon="@android:drawable/ic_menu_my_calendar"
             app:iconGravity="textStart"
             app:iconPadding="8dp"
             app:iconSize="24dp"
-            app:iconTint="#4F6EF7" />
+            app:iconTint="@color/blue_primary" />
 
         <!-- Update Button -->
         <com.google.android.material.button.MaterialButton
@@ -365,10 +395,10 @@
             android:fontFamily="@font/ibmplexsans_semibold"
             android:text="Cập nhật thông tin"
             android:textAllCaps="false"
-            android:textColor="#4F6EF7"
+            android:textColor="@color/blue_primary"
             android:textSize="16sp"
             app:cornerRadius="28dp"
-            app:strokeColor="#4F6EF7"
+            app:strokeColor="@color/blue_primary"
             app:strokeWidth="2dp" />
 
         <!-- Log Out Button -->
